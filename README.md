@@ -4,7 +4,7 @@ Interactive flashcards for Claude Certified Architect – Foundations practice e
 
 ## Live demo
 
-**GitHub Pages:** https://aniketchanana.github.io/test-repo/
+**GitHub Pages:** [https://aniketchanana.github.io/claudecertificationfoundation/](https://aniketchanana.github.io/claudecertificationfoundation/)
 
 ## Papers
 
