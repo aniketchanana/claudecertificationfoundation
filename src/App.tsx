@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Disclaimer } from './components/Disclaimer'
 import { ExamResults } from './components/ExamResults'
 import { Flashcard } from './components/Flashcard'
 import { Onboarding } from './components/Onboarding'
@@ -44,7 +45,8 @@ function QuizSession({
   }
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
+    <div className="flex min-h-svh flex-col">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
       <Sidebar
         paperLabel={paper.label}
         mode={mode}
@@ -113,6 +115,8 @@ function QuizSession({
           </div>
         )}
       </main>
+    </div>
+    <Disclaimer />
     </div>
   )
 }

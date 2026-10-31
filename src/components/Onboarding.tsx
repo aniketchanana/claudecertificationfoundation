@@ -1,4 +1,5 @@
 import type { Paper, PaperId, StudyMode } from '../types'
+import { Disclaimer } from './Disclaimer'
 
 type OnboardingProps = {
   papers: Paper[]
@@ -33,7 +34,8 @@ export function Onboarding({
   const canStart = Boolean(selectedPaperId && selectedMode)
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-2xl flex-col justify-center gap-8 px-4 py-10 sm:px-6">
+    <div className="flex min-h-svh flex-col">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-4 py-10 sm:px-6">
       <div className="space-y-2">
         <p className="text-xs font-semibold tracking-[0.2em] text-orange-400/90 uppercase">
           CCARF Practice Exam
@@ -118,6 +120,8 @@ export function Onboarding({
       >
         Start
       </button>
+      </div>
+      <Disclaimer />
     </div>
   )
 }

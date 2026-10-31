@@ -13,6 +13,7 @@ Interactive flashcards for Claude Certified Architect – Foundations practice e
 | Paper 1 | Full practice exam · 60 questions |
 | Paper 2 | Quick drill · 15 questions |
 | Paper 3 | Foundations practice set · 60 questions |
+| Paper 4 | Additional practice set · 37 questions |
 
 ## Local development
 

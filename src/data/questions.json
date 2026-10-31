@@ -195,7 +195,7 @@
       "C": "This creates a poor customer experience and eliminates the agent's ability to facilitate the process. The correct approach is to keep the tool but gate it behind human approval, providing a seamless escalation flow.",
       "D": "PostToolUse hooks run after execution. Account deletion may be irreversible or difficult to undo. Prevention via a PreToolUse hook is required, not post-execution rollback."
     },
-    "correct_answer": "C"
+    "correct_answer": "B"
   },
   {
     "id": 12,

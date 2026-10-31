@@ -7,6 +7,7 @@ const LEGACY_KEYS = [
   'ccarf-flashcards-progress:paper-1',
   'ccarf-flashcards-progress:paper-2',
   'ccarf-flashcards-progress:paper-3',
+  'ccarf-flashcards-progress:paper-4',
 ]
 
 export type StoredProgress = QuizProgress & {
@@ -16,7 +17,12 @@ export type StoredProgress = QuizProgress & {
 }
 
 function isPaperId(value: unknown): value is PaperId {
-  return value === 'paper-1' || value === 'paper-2' || value === 'paper-3'
+  return (
+    value === 'paper-1' ||
+    value === 'paper-2' ||
+    value === 'paper-3' ||
+    value === 'paper-4'
+  )
 }
 
 function isStudyMode(value: unknown): value is StudyMode {

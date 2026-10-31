@@ -1,0 +1,682 @@
+[
+  {
+    "id": 1,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A multi-agent system has subagents for web search, academic database, and industry reports. The academic database subagent hits a 403 Forbidden on a specific journal, catches the error, and returns an empty result set marked as successful. The coordinator produces a final report with no academic sources. What is the critical failure in this design?",
+    "options": {
+      "A": "The entire workflow should have been terminated when the academic database subagent encountered the 403 error.",
+      "B": "The subagent should have retried the request with exponential backoff, as 403 errors are often transient.",
+      "C": "The subagent silently suppressed the access failure by returning empty results as success, preventing the coordinator from attempting recovery or noting the gap in coverage.",
+      "D": "The coordinator should validate that all subagents return non-empty results before producing the final report."
+    },
+    "feedback": {
+      "A": "Workflow termination on a single subagent failure wastes partial results from the web search and industry reports subagents that may have completed successfully. The coordinator should proceed with available results and annotate the coverage gap.",
+      "B": "403 Forbidden is a permission error, not a transient error. Retrying will not resolve it — the subagent lacks the required access credentials. The correct response is to propagate the error with its type so the coordinator knows the failure is not retryable.",
+      "C": "Silent suppression — returning empty results marked as success — is the worst error propagation anti-pattern. The coordinator believes the academic search succeeded and found nothing, so it produces a report without academic sources and without noting the coverage gap. The subagent should have returned structured error context with the failure type, what was attempted, and potential alternatives.",
+      "D": "Requiring non-empty results from all subagents would cause the workflow to fail when a subagent legitimately finds no matching data. The issue is that the error was suppressed, not that the coordinator failed to validate result volume."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 2,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "A synthesis agent frequently returns control to the coordinator for simple fact verification, adding 2–3 round trips per task and 40% latency. Analysis shows 85% of verifications are simple lookups. What is the most effective solution?",
+    "options": {
+      "A": "Increase the coordinator's parallelism so it can process the queued verification requests faster and absorb the extra round trips.",
+      "B": "Give the synthesis agent a scoped verify_fact tool for simple lookups, escalating only complex checks to the coordinator.",
+      "C": "Remove fact verification from the synthesis workflow altogether, which eliminates both the round trips and the latency they add.",
+      "D": "Add a coordinator-level cache of verification results so repeated lookups return instantly, removing most of the round-trip latency."
+    },
+    "feedback": {
+      "A": "Faster processing does not eliminate unnecessary round trips. The latency comes from the routing overhead itself, not the coordinator's speed.",
+      "B": "A scoped cross-role tool handles the 85% simple case directly, eliminating round-trip latency. Complex cases still route through the coordinator for proper handling.",
+      "C": "Removing verification compromises output quality. The goal is to make verification faster, not to skip it.",
+      "D": "Caching helps with repeated lookups but does not address the fundamental round-trip overhead for first-time verifications, which are the majority."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 3,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation system classifies hate speech accurately for explicit slurs but misses coded language and dog-whistle terms that human moderators easily recognise. The prompt includes detailed written rules about coded language patterns. What intervention would most improve detection of coded hate speech?",
+    "options": {
+      "A": "Add 20+ examples covering every known category of coded hate speech to maximise coverage",
+      "B": "Add 2–4 few-shot examples of coded hate speech, with reasoning naming the coded language and the targeted group.",
+      "C": "Add a comprehensive dictionary of every known coded term and dog-whistle to the system prompt so the classifier can match posts against the full list.",
+      "D": "Increase the model's context window so it can consider more of the user's post history for context"
+    },
+    "feedback": {
+      "A": "Laundry lists of examples dilute attention and teach pattern-matching rather than generalisation. 2–4 targeted examples with reasoning are more effective than 20 examples without reasoning because they teach the analytical process.",
+      "B": "Few-shot examples with reasoning tags teach the model the pattern-recognition process, not just individual terms. Showing the reasoning chain — surface meaning, coded meaning, targeted group, contextual signals — enables the model to generalise to new coded terms it has not seen before.",
+      "C": "A static dictionary becomes outdated immediately as coded language constantly evolves. It also bloats the prompt without teaching the model to recognise the underlying patterns of coded speech.",
+      "D": "Context window size is not the bottleneck. The model fails to recognise coded language in individual posts, which is a prompt engineering issue, not a context limitation."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 4,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A customer support agent handles a multi-issue session. After several turns, the agent refers to 'your recent refund request' instead of the specific $247.83 refund for order #8891. The conversation history is being summarised between turns to manage context length. What is the most effective fix?",
+    "options": {
+      "A": "Store the full conversation in an external database and retrieve only the relevant turns on demand.",
+      "B": "Extract transactional facts into a persistent case facts block outside the summarised history.",
+      "C": "Instruct the model to preserve every amount, date, and order number verbatim whenever it summarises earlier turns.",
+      "D": "Increase the context window size so that summarisation can be avoided entirely for the whole session."
+    },
+    "feedback": {
+      "A": "This adds infrastructure complexity without addressing the core issue of which facts must persist in every prompt.",
+      "B": "This directly addresses the progressive summarisation trap by ensuring critical numerical and transactional data is never condensed.",
+      "C": "Prompt-based instructions for summarisation are unreliable — the model will still compress details probabilistically.",
+      "D": "This postpones the problem but does not solve it — eventually the context will fill, and summarisation will still destroy specifics."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 5,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A research subagent queries an academic journal database for articles on renewable energy policy. The database responds successfully but returns zero matching articles. Meanwhile, a second subagent querying a government statistics API receives a connection timeout. The coordinator currently handles both cases identically by retrying three times. What should change?",
+    "options": {
+      "A": "Increase the retry count to five for both cases to give transient failures more time to resolve",
+      "B": "Remove retries entirely and immediately escalate both failures to a human operator for investigation",
+      "C": "Add exponential backoff to all retries so the subagents wait progressively longer between attempts",
+      "D": "Distinguish access failures from valid empty results: retry the API timeout as a transient failure, but accept the zero-match journal response as a valid finding and annotate the coverage gap"
+    },
+    "feedback": {
+      "A": "More retries do not fix the core problem. The journal database returned a valid empty result — it successfully searched and found nothing. Retrying it wastes time and API calls on an operation that already completed correctly.",
+      "B": "This is disproportionate. The API timeout is a transient failure that retries can resolve. The empty journal result is not a failure at all — it is a valid answer. Neither case requires human escalation.",
+      "C": "Backoff improves retry behaviour for transient failures but does not address the fundamental issue: the journal query does not need retries at all. It returned a valid response indicating no matches exist.",
+      "D": "Access failures (timeouts, connection errors) indicate the tool could not reach the data source and warrant retry. Valid empty results mean the tool reached the source and found no matches — this IS the answer. Conflating these leads to unnecessary retries on valid results and missed coverage annotations."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 6,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "The moderation system handles appeals where users contest a moderation decision. Currently, the same agent that made the original decision re-evaluates the appeal. Appeal overturn rates are suspiciously low. What is the most effective architectural change?",
+    "options": {
+      "A": "Automatically overturn decisions where the user provides any appeal justification to improve user trust",
+      "B": "Route appeals to a separate agent instance that cannot see the original reasoning, given only the content and the user's justification.",
+      "C": "Route every appeal to a human reviewer with full authority to overturn the automated decision, taking the original agent out of the appeal path entirely.",
+      "D": "Add stronger instructions to the appeal handler's prompt requiring it to weigh the user's perspective fairly and set aside its earlier decision."
+    },
+    "feedback": {
+      "A": "Automatic overturn on any appeal completely undermines moderation. Users who genuinely violated policies would simply appeal every decision.",
+      "B": "A fresh agent instance without access to the original reasoning context evaluates the content independently. This avoids confirmation bias from the original decision. The appeal agent sees only the content and the user's argument, enabling a genuinely independent review.",
+      "C": "Human review for every appeal does not scale and removes the benefit of automated moderation. Some appeals can be resolved automatically by a separate, unbiased instance.",
+      "D": "Prompt instructions cannot overcome the bias of an agent reviewing its own decision. The original reasoning context still influences the re-evaluation regardless of instructions."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 7,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "A moderation team introduces a severity scale ('low', 'medium', 'high', 'critical'). The same post (a user threatening to 'destroy' a competitor's product in a review) is classified as 'high' on some runs and 'low' on others. The prompt defines severities with phrases like 'high means the content is clearly harmful' and 'low means the content is mildly inappropriate'. What should they change?",
+    "options": {
+      "A": "Remove the severity scale and use binary classification (violation / not violation) to reduce inconsistency",
+      "B": "Replace the prose severity descriptions with a concrete example per level as a calibration anchor.",
+      "C": "Run the classification three times over and take the majority vote to settle the severity for each item.",
+      "D": "Set the temperature to 0 to eliminate classification variance from one run of the pipeline to the next."
+    },
+    "feedback": {
+      "A": "Binary classification loses valuable granularity needed for routing decisions (auto-remove vs escalate vs warn). The fix is better severity criteria, not removing severity entirely.",
+      "B": "Concrete examples anchor each severity level to specific, observable patterns. When the model sees 'destroy a competitor's product' in a review context, it can match against the 'low severity — figurative language' example rather than interpreting 'clearly harmful' differently each run.",
+      "C": "Majority voting averages out noise but triples cost and latency without fixing the root cause. With vague criteria, the model may consistently misclassify in the same direction, making voting ineffective.",
+      "D": "Lower temperature reduces randomness but does not fix ambiguous criteria. The model is inconsistent because the severity definitions are vague, not because of sampling variance."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 8,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A customer says: 'This is ridiculous, I have been waiting 20 minutes. Just connect me to a real person.' The agent has access to the customer's account and can see the issue is a simple password reset that takes 30 seconds to resolve. What should the agent do?",
+    "options": {
+      "A": "Ask the customer if they would prefer to wait for a human or let the agent resolve the password reset quickly.",
+      "B": "Acknowledge the frustration and offer to resolve the password reset, explaining it will take only 30 seconds — the issue is straightforward and escalation is unnecessary.",
+      "C": "Run sentiment analysis to confirm the customer is genuinely frustrated before deciding whether to escalate or attempt resolution.",
+      "D": "Escalate to a human agent immediately without attempting to resolve the issue, because the customer explicitly requested a human."
+    },
+    "feedback": {
+      "A": "The customer has already stated their preference clearly. Asking again ignores their explicit request and adds friction to an already frustrating experience.",
+      "B": "The customer has explicitly requested a human agent. Regardless of how simple the issue is, the agent must honour the explicit request immediately. Attempting to resolve first ignores the customer's stated preference.",
+      "C": "Sentiment analysis is an unreliable escalation trigger. More importantly, the customer's explicit request for a human is the trigger here, not their emotional state. Sentiment analysis adds unnecessary processing.",
+      "D": "When a customer explicitly says 'connect me to a real person', the agent must escalate immediately. This is one of the three valid escalation triggers. The simplicity of the issue is irrelevant — the customer's explicit request takes priority."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 9,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "A developer is investigating a production bug. They know the error message 'InvalidStateTransition' is logged somewhere in the codebase, but they do not know which files contain it or where the state machine is defined. What is the correct tool sequence to locate the bug?",
+    "options": {
+      "A": "Grep for 'InvalidStateTransition' across the codebase, then Read the matching files.",
+      "B": "Use Glob for '**/*state*' to find state machine files, then Read each one to search for the error message.",
+      "C": "Use Read on common file locations like src/index.ts and src/app.ts to find the error manually.",
+      "D": "Use Edit to search for 'InvalidStateTransition' and replace it with a more descriptive error message."
+    },
+    "feedback": {
+      "A": "Grep searches file contents, so it locates every occurrence of the error string regardless of file name. Read then loads only the matching files to understand the surrounding code and state machine logic. This is the minimal, targeted approach.",
+      "B": "Glob matches file paths, so it would find files with 'state' in the name, but the error string could appear in files without 'state' in their name. Reading every matched file wastes context tokens on files that may not contain the error.",
+      "C": "Guessing file locations is unreliable and wastes context tokens. The developer does not know where the error is defined, so a content search (Grep) is needed first.",
+      "D": "Edit is a modification tool, not a search tool. Using it to locate code is incorrect, and modifying error messages without understanding the bug first could mask the real issue."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 10,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A multi-agent research system has three subagents (financial filings, news, technical white papers) and a synthesis agent. Each subagent returns properly attributed findings, but the final synthesised report has no source attribution: stakeholders cannot trace which claim came from which source. Which fix addresses the root cause?",
+    "options": {
+      "A": "Have each subagent include source URLs as inline hyperlinks in their prose output so the synthesis agent can preserve them",
+      "B": "Require subagents to output structured claim-source mappings and instruct the synthesis agent to preserve and merge them.",
+      "C": "Append a bibliography section at the end of the report listing all sources each subagent consulted",
+      "D": "Store all subagent outputs in a database and have the synthesis agent reference database entries by ID instead of incorporating content directly"
+    },
+    "feedback": {
+      "A": "Inline hyperlinks in prose are fragile — the synthesis agent will rewrite, merge, and compress prose during summarisation, stripping or disconnecting links from their associated claims. Attribution must be in structured data, not embedded in prose that gets rewritten.",
+      "B": "Structured claim-source mappings survive synthesis because they are data structures, not prose that gets rewritten. The synthesis agent can merge mappings from multiple subagents while preserving the link between each claim and its source. This also enables content-appropriate rendering: financial data as tables, news as prose, technical findings as lists — each with attribution intact.",
+      "C": "A bibliography lists sources but does not map specific claims to specific sources. Stakeholders need to know which claim came from which document, not just which documents were consulted overall. This is document-level attribution, not claim-level provenance.",
+      "D": "This adds infrastructure complexity without solving the synthesis problem. The synthesis agent still needs to merge and present findings coherently. Database references do not prevent attribution loss during the summarisation and rewriting that synthesis inherently requires."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 11,
+    "domain": "D3 Claude Code Configuration & Workflows",
+    "question": "A fintech company requires that all API response payloads are normalised to snake_case before being logged, and that any file write to the src/api/ directory is automatically linted. They want these enforcements to be deterministic and not rely on the model remembering instructions. Which hook configuration achieves both requirements?",
+    "options": {
+      "A": "A PreToolUse hook on file writes that runs the linter before the write completes, and a PostToolUse hook on API response handling that normalises field names to snake_case",
+      "B": "A PostToolUse hook on file writes to src/api/ that runs the linter on the created file, and a PostToolUse hook on data processing that normalises response payloads to snake_case",
+      "C": "Add both requirements to CLAUDE.md with clear examples, and add a PreToolUse hook that reminds the model about these rules before each tool call",
+      "D": "A PreToolUse hook that blocks any file write to src/api/ unless the file has already been linted, and a PreToolUse hook that blocks API calls unless snake_case normalisation is configured"
+    },
+    "feedback": {
+      "A": "PreToolUse fires before the tool runs, so there is no file content to lint yet. Linting must happen after the file is written (PostToolUse). The ordering of hooks to actions is incorrect here.",
+      "B": "Both are PostToolUse hooks because both act on completed outputs. The linter runs after a file write to src/api/ is complete, validating the written content. The normalisation hook processes API response data after it is retrieved, converting fields to snake_case before logging. Both provide deterministic enforcement independent of model instructions.",
+      "C": "CLAUDE.md instructions and PreToolUse reminders both rely on the model's compliance, which is not deterministic. The requirement explicitly states that enforcement must not depend on the model remembering instructions.",
+      "D": "PreToolUse blocking assumes the file exists before the write, which is contradictory. You cannot lint a file that has not been written yet. PostToolUse hooks that process output after completion are the correct approach for validation and normalisation."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 12,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation system uses tool_use with a JSON schema for classification output. All fields including 'sub_category' and 'target_demographic' are marked as required. Auditors discover that when a post is spam (which has no target demographic), the model fabricates plausible-sounding demographics like 'general public' or 'young adults.' What schema change prevents this fabrication?",
+    "options": {
+      "A": "Add a validation step that rejects any target_demographic value returned for a post that has been classified as spam, before the record is written.",
+      "B": "Add a prompt instruction telling the model to leave 'target_demographic' empty whenever a post is spam and the field does not apply.",
+      "C": "Remove 'target_demographic' from the schema entirely, on the grounds that its presence is what causes the fabrication in the first place.",
+      "D": "Make 'target_demographic' nullable so the model can return null when the field does not apply instead of fabricating a value."
+    },
+    "feedback": {
+      "A": "Post-hoc validation catches the problem but does not prevent it. The model still fabricates values; they are just rejected after the fact. Schema design should prevent fabrication at the source.",
+      "B": "Prompt instructions cannot override a schema that marks the field as required. The JSON schema enforces the constraint at the API level, and the model must comply with the schema regardless of prompt instructions.",
+      "C": "Removing the field loses valuable data for categories where target demographic is genuinely relevant (hate speech, harassment). The fix is making it nullable, not removing it.",
+      "D": "Required fields pressure the model to produce a value even when none exists. Making the field nullable gives the model a legitimate way to indicate 'not applicable,' eliminating the incentive to fabricate. This is the standard pattern for fields that apply conditionally."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 13,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "A multi-agent research system must process a customer's request that involves three sequential stages: data collection, analysis, and report generation. Each stage depends on the output of the previous one. Which orchestration pattern is most appropriate?",
+    "options": {
+      "A": "Dynamic adaptive decomposition — let the coordinator decide the order at runtime based on query complexity",
+      "B": "Pipeline orchestration — pass the output of each stage as input to the next in a defined sequence",
+      "C": "Hub-and-spoke with all three agents reporting independently to the coordinator",
+      "D": "Parallel orchestration — run all three subagents simultaneously to minimise latency"
+    },
+    "feedback": {
+      "A": "Dynamic adaptive decomposition is for open-ended investigation tasks where the next step depends on discoveries. Here, the three stages and their dependencies are known in advance, making a fixed pipeline the more predictable and efficient choice.",
+      "B": "Pipeline orchestration is the correct pattern for sequential dependencies. Each stage completes before the next begins, with the output of one stage serving as the input to the next. This matches the data collection -> analysis -> report generation dependency chain.",
+      "C": "Independent reporting ignores the sequential dependencies. The analysis agent cannot produce meaningful results without data collection output. The pipeline must enforce the execution order.",
+      "D": "Parallel execution requires independent tasks. Here, analysis depends on data collection results and report generation depends on analysis results. Running them simultaneously would mean the analysis agent has no data to analyse."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 14,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "Production logs show an agent frequently calls get_customer when users ask about orders (e.g. 'check my order #12345'), instead of calling lookup_order. Both tools have minimal descriptions ('Retrieves customer information' / 'Retrieves order details') and accept similar identifier formats. What is the most effective first step to improve tool selection reliability?",
+    "options": {
+      "A": "Expand each tool's description to include input formats, example queries, edge cases, and boundaries explaining when to use it versus similar tools.",
+      "B": "Consolidate both tools into a single lookup_entity tool that accepts any identifier and internally determines which backend to query.",
+      "C": "Add 5–8 few-shot examples to the system prompt demonstrating correct tool selection patterns for order-related queries.",
+      "D": "Implement a routing layer that parses user input before each turn and pre-selects the appropriate tool based on detected keywords."
+    },
+    "feedback": {
+      "A": "Tool descriptions are the primary mechanism LLMs use for tool selection. Expanding them is the lowest-effort, highest-leverage fix that directly addresses the root cause.",
+      "B": "Consolidation is a valid architectural choice but requires significantly more effort than expanding descriptions. The exam favours proportionate first steps.",
+      "C": "Few-shot examples add token overhead without fixing the underlying issue. The root cause is that descriptions do not differentiate the tools.",
+      "D": "A routing layer is over-engineered as a first step. It bypasses the LLM's natural language understanding and adds infrastructure complexity."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 15,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "In a hub-and-spoke research system, a coordinator manages several search and analysis subagents. Which responsibilities sit with the coordinator rather than with individual subagents? (Select 3)",
+    "options": {
+      "A": "Deciding which subagents to invoke based on the complexity of each incoming query.",
+      "B": "Running every search itself first so subagents only verify its findings.",
+      "C": "Routing all inter-agent communication so subagents never exchange messages directly.",
+      "D": "Sharing its full conversation history with each subagent automatically at spawn time.",
+      "E": "Aggregating subagent results and re-delegating targeted follow-up queries when synthesis shows gaps."
+    },
+    "feedback": {
+      "A": "The guide places dynamic subagent selection with the coordinator, which analyses query requirements instead of always running the full pipeline.",
+      "B": "The coordinator delegates work rather than duplicating it; doing every search itself defeats the point of decomposition.",
+      "C": "Hub-and-spoke routes every message through the coordinator for observability and consistent error handling.",
+      "D": "Subagents run with isolated context; nothing is inherited automatically, and the coordinator passes only the context each task needs.",
+      "E": "Result aggregation and gap-driven re-delegation are coordinator responsibilities in the iterative refinement loop."
+    },
+    "correct_answer": [
+      "A",
+      "C",
+      "E"
+    ],
+    "select_count": 3
+  },
+  {
+    "id": 16,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "Your CI/CD pipeline processes code reviews using the Message Batches API. After a batch completes, you need to match each review result back to the corresponding pull request. What is the correct mechanism for correlating batch results with their original requests?",
+    "options": {
+      "A": "Parse the review content to identify which pull request it refers to based on file names mentioned in the review",
+      "B": "Use the custom_id field in each batch request to store the pull request identifier, then match results by custom_id",
+      "C": "Submit each pull request as a separate batch of one item to maintain correlation through the batch ID",
+      "D": "Rely on the batch API returning results in the same order they were submitted"
+    },
+    "feedback": {
+      "A": "Content parsing is fragile and error-prone. The Batches API provides a built-in mechanism for result correlation.",
+      "B": "The custom_id field exists specifically for correlating batch request/response pairs. Setting it to the pull request identifier provides reliable, direct correlation without relying on result ordering or content parsing.",
+      "C": "Submitting individual batches defeats the purpose of batch processing and does not leverage the custom_id mechanism designed for exactly this use case.",
+      "D": "Batch results are not guaranteed to return in submission order. The custom_id field is the correct correlation mechanism."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 17,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation system validates that every classification includes a 'reasoning' field explaining the decision. When validation fails (empty reasoning), the system retries. For most posts, the retry succeeds after feeding back the error 'reasoning field was empty — provide a brief justification for the classification.' However, for posts in unfamiliar languages, retries consistently fail. What should the system do?",
+    "options": {
+      "A": "Remove the reasoning validation requirement for posts in unfamiliar languages",
+      "B": "Retry format errors on analysable posts; route capability gaps like unfamiliar languages to human review.",
+      "C": "Add the unfamiliar language to the system prompt as a supported language to encourage the model to try harder",
+      "D": "Increase the retry count from 1 to 5 for unfamiliar language posts since the model may succeed with more attempts"
+    },
+    "feedback": {
+      "A": "Removing the validation requirement means these posts would receive classifications without any justification, which undermines auditability. The correct approach is human review, not lower standards.",
+      "B": "The retry boundary distinguishes between fixable format issues and unfixable capability gaps. Empty reasoning on analysable posts is a format error that retries with error feedback can fix. Unfamiliar languages represent absent capability — no amount of retrying will create language understanding. Route these to human review.",
+      "C": "Listing an unsupported language in the prompt does not give the model language understanding. This may actually worsen the problem by encouraging fabricated analysis of content the model cannot read.",
+      "D": "More retries are ineffective when the model lacks the capability to analyse content in that language. The failure is not a transient format issue — the model genuinely cannot provide reasoning for content it cannot understand."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 18,
+    "domain": "D3 Claude Code Configuration & Workflows",
+    "question": "Project-level `.claude/CLAUDE.md` says 'use 4-space indentation matching the existing codebase.' A senior architect has 'use 2-space indentation' in their user-level `~/.claude/CLAUDE.md`. In recent sessions the architect's code has come back in 2 spaces and broken the build. The team needs a guarantee that 4-space indentation is applied on every save. What should they do?",
+    "options": {
+      "A": "Add a PostToolUse hook that runs the team's formatter after every Write/Edit, so 4-space indentation is enforced regardless of what Claude generates",
+      "B": "Leave the rule in project-level `.claude/CLAUDE.md` — the more specific scope wins on conflicts, so the project rule will override the architect's user-level preference",
+      "C": "Ask the architect to delete their user-level `~/.claude/CLAUDE.md` so there is no conflict to resolve",
+      "D": "Move the 4-space rule into a `CLAUDE.local.md` at the project root so it is appended last and reads after the user-level file"
+    },
+    "feedback": {
+      "A": "Anthropic's memory docs are explicit that CLAUDE.md is delivered as a user message with 'no guarantee of strict compliance,' and that 'if two rules contradict each other, Claude may pick one arbitrarily.' The docs themselves point at hooks for this case: hooks 'execute as shell commands at fixed lifecycle events and apply regardless of what Claude decides to do.' A PostToolUse hook running the formatter is the only option here that gives a hard guarantee.",
+      "B": "This is the popular paraphrase, but it's not what Anthropic's docs say. The docs describe a load order (broadest scope to most specific, so project instructions appear in context after user instructions) but explicitly state files are 'concatenated into context rather than overriding each other' and conflicts 'may [be] pick[ed] arbitrarily.' The team has already seen that assumption fail in production.",
+      "C": "This treats a personal config file as a team problem and doesn't scale — every new teammate would need to police their own home directory, and any future contradiction (from a different file, an `@import`, or a `.claude/rules/` entry) would resurface the same fragility. The fix is to remove reliance on guidance-style config for a rule that must be enforced, not to remove the conflicting file.",
+      "D": "Load order does append `CLAUDE.local.md` after `CLAUDE.md` within a directory, but the docs are careful to call this 'load order,' not precedence, and warn that conflicts may resolve arbitrarily. `CLAUDE.local.md` is also gitignored, so a team standard cannot live there."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 19,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A customer support agent searches for a customer named 'Sarah Johnson' and the lookup tool returns three matching accounts with the same name but different addresses and account ages. The agent selects the most recently active account and proceeds with the refund. Later, the customer calls back because the refund was applied to the wrong account. What should the agent have done differently?",
+    "options": {
+      "A": "Escalated to a human agent immediately because the system returned ambiguous results.",
+      "B": "Processed the refund across all three accounts to ensure the correct customer received it.",
+      "C": "Asked the customer for additional identifying information to disambiguate the matching accounts.",
+      "D": "Selected the account with the oldest creation date, since long-standing customers are the most likely callers to a support line."
+    },
+    "feedback": {
+      "A": "Ambiguous search results are a routine scenario that the agent can resolve by asking for clarification. Escalation is not warranted when the agent can gather additional information to disambiguate.",
+      "B": "Processing refunds on incorrect accounts creates financial discrepancies and additional work to reverse the erroneous transactions. The agent must identify the correct account first.",
+      "C": "When multiple customers match a search query, the agent must ask for additional identifiers rather than selecting based on heuristics. This ensures the correct account is identified before any action is taken.",
+      "D": "Account age is an unreliable heuristic for identifying the correct customer. Any selection based on heuristics risks choosing the wrong account."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 20,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "A research subagent's database query fails partway through an investigation. Which pieces of information belong in the structured error context it returns to the coordinator? (Select 3)",
+    "options": {
+      "A": "The failure type, such as transient, validation, or permission.",
+      "B": "A plain 'no results found' message in place of the error.",
+      "C": "Partial results gathered before the failure.",
+      "D": "What was attempted, including the query that failed.",
+      "E": "No report at all: the subagent should retry silently until the query succeeds."
+    },
+    "feedback": {
+      "A": "Categorising the failure lets the coordinator make the right retry-or-reroute decision.",
+      "B": "Reporting an access failure as an empty result conflates two different situations and hides the need for a retry decision.",
+      "C": "Partial results preserve completed work so the coordinator does not re-run what already succeeded.",
+      "D": "The attempted query gives the coordinator enough detail to retry intelligently or reformulate the request.",
+      "E": "Silent retries hide failures from the coordinator, which owns error handling and needs observability into what went wrong."
+    },
+    "correct_answer": [
+      "A",
+      "C",
+      "D"
+    ],
+    "select_count": 3
+  },
+  {
+    "id": 21,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "A tool returns an empty array after a customer lookup. The agent retries 3 times, then escalates to a human agent. Analysis shows the customer's account simply does not exist. What is the root cause of this wasted effort?",
+    "options": {
+      "A": "The escalation threshold is too aggressive — the agent should exhaust more retries before involving a human.",
+      "B": "The system prompt should instruct the agent not to retry customer lookups.",
+      "C": "The tool does not distinguish between access failures and valid empty results, so the agent treats 'no matches' as a retriable failure.",
+      "D": "The retry limit is too low — increasing to 5 retries would resolve the issue."
+    },
+    "feedback": {
+      "A": "The problem is not the escalation threshold. The problem is that the agent retries at all. A valid empty result requires no retry and no escalation.",
+      "B": "Hard-coding retry rules per tool in the system prompt is brittle. The proper fix is structured error metadata that tells the agent whether the result is retryable.",
+      "C": "The tool successfully queried the data source and found no matches. This is a valid empty result, not an access failure. The agent's recovery logic cannot distinguish the two, causing it to retry when it should accept the result.",
+      "D": "More retries make the problem worse. The tool succeeded — it found no matching customer. Retrying a successful query with no matches will never produce different results."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 22,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation system's classification schema has a 'category' field defined as a free-text string. Auditors find 47 different category values in production data, including 'hate speech', 'Hate Speech', 'hate-speech', 'hateful content', and 'hate_speech' — all intended to be the same category. This makes downstream analytics and routing unreliable. What is the best schema fix?",
+    "options": {
+      "A": "Add detailed instructions to the prompt listing the exact category names and their capitalisation so the model always emits the canonical string.",
+      "B": "Change 'category' from free-text to an enum with values like 'hate_speech', 'spam', and 'harassment', plus an 'other' option.",
+      "C": "Add few-shot examples showing the correct category formatting for each type",
+      "D": "Add a post-processing normalisation step that maps all variations to canonical category names"
+    },
+    "feedback": {
+      "A": "Prompt instructions are probabilistic. The model may still produce variations despite instructions. Schema-level enforcement via enums is deterministic and cannot be overridden.",
+      "B": "Enum fields constrain the model to predefined values, eliminating spelling and formatting variations. Including 'other' as an enum value handles edge cases without allowing free-text drift. With strict: true, the schema guarantees only valid enum values are returned.",
+      "C": "Few-shot examples improve consistency but cannot guarantee exact string matching. Schema enums are the correct mechanism for constraining categorical output to a fixed set of values.",
+      "D": "Post-processing normalisation adds complexity and requires constant maintenance as new variations appear. The schema should prevent the problem at the source rather than patching it downstream."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 23,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "A consulting firm needs an agent to add a comprehensive test suite to a large legacy codebase. The codebase has no existing tests, unclear dependencies between modules, and the team does not know which areas are most critical. Which task decomposition strategy is most appropriate?",
+    "options": {
+      "A": "A fixed sequential pipeline that reviews each file in alphabetical order and generates tests for each one",
+      "B": "A single-pass analysis that processes the entire codebase at once and generates a complete test plan",
+      "C": "Dynamic adaptive decomposition: map the codebase, find the high-impact areas, and adapt the plan as dependencies emerge.",
+      "D": "A multi-pass architecture with per-file analysis and a cross-file integration pass, exactly like a standard code review pipeline."
+    },
+    "feedback": {
+      "A": "Fixed sequential pipelines are best for predictable, structured tasks. Adding tests to a legacy codebase with unclear dependencies is an open-ended investigation that requires adaptive exploration to discover which areas are most critical and how dependencies affect test design.",
+      "B": "A single-pass analysis of a large codebase would suffer from attention dilution, producing inconsistent coverage. Additionally, a single pass cannot adapt to discoveries about dependencies and critical areas that emerge during exploration.",
+      "C": "Adding tests to a legacy codebase with unknown dependencies is an open-ended investigation task. Dynamic adaptive decomposition generates subtasks based on what is discovered at each step — first mapping the structure, then identifying critical areas, then adapting the test plan as dependency relationships emerge.",
+      "D": "Multi-pass architecture solves attention dilution for review tasks, but test generation in a legacy codebase needs adaptive exploration: discovering critical modules and dependencies and prioritising coverage. The decomposition must adapt to findings, not follow a fixed per-file pattern."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 24,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "A moderation classification tool includes a `detected_patterns` array where the model lists specific patterns it identified (e.g. 'repeated slur targeting ethnicity'). Validation checks whether the detected patterns match the assigned category, and on mismatch retries with feedback like 'You classified this as spam but detected patterns of hate speech targeting ethnicity, please re-evaluate.' What is the primary benefit of the `detected_patterns` field in this workflow?",
+    "options": {
+      "A": "It lets the system auto-correct the category by overriding the model's classification with a rule-based pattern match",
+      "B": "It provides an auditable evidence trail showing which specific content features drove each moderation decision",
+      "C": "It lets validation detect reasoning inconsistencies and feed back targeted errors the model uses to self-correct.",
+      "D": "It increases classification accuracy by forcing the model to identify specific patterns before assigning a category"
+    },
+    "feedback": {
+      "A": "The system does not override the model's classification. It feeds back the inconsistency and asks the model to re-evaluate. The model may correct its category or its patterns — the point is self-correction, not rule-based override.",
+      "B": "Auditability is a secondary benefit. The primary benefit in this validation/retry workflow is enabling the system to detect and feed back reasoning inconsistencies for self-correction.",
+      "C": "The detected_patterns field externalises the model's reasoning into structured data that can be programmatically validated against the conclusion. When patterns and category are inconsistent, the specific error feedback ('you detected hate speech patterns but classified as spam') gives the model actionable information to self-correct. This is the core benefit in a retry-with-error-feedback workflow.",
+      "D": "While structured reasoning fields can improve accuracy, this framing misses the retry workflow context. The primary benefit is enabling programmatic validation of reasoning consistency and targeted feedback for self-correction."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 25,
+    "domain": "D2 Tool Design & MCP Integration",
+    "question": "A team's shared `.mcp.json` configures a PostgreSQL MCP server. A developer adds a personal staging database MCP server to their `~/.claude.json`, so both database tools are available in their session. When they query 'check user count', the agent calls the production tool instead of staging. What is the best resolution?",
+    "options": {
+      "A": "Use tool_choice with forced selection of the staging database tool for all turns during testing.",
+      "B": "Move the personal staging server into the shared .mcp.json beside production and let the agent pick between them from each server's connection string.",
+      "C": "Remove the production database from .mcp.json during testing so only the staging server is available.",
+      "D": "Rename the staging tool to a distinct name, put its environment in the description, and add a session rule that staging tools take precedence."
+    },
+    "feedback": {
+      "A": "Forced selection prevents the agent from calling any other tool, including production database queries that may be needed for comparison or non-test tasks during the session.",
+      "B": "Personal staging infrastructure does not belong in the shared .mcp.json, and agents route by tool name and description, not by connection strings, so this neither isolates the config nor fixes selection.",
+      "C": "Modifying the shared .mcp.json affects all team members and removes production access for legitimate use. The configuration should not be altered for one developer's testing needs.",
+      "D": "Description tuning alone cannot route a context-free prompt like 'check user count' because the user gave the agent no environment cue. The fix is to make the two tools structurally distinguishable (distinct names, environment in the description) and to give the agent an explicit routing rule for the session. Renaming sits inside the developer's own ~/.claude.json so it does not affect the shared team configuration."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 26,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A multi-agent research system finds conflicting data on a pharmaceutical compound's efficacy. A 2022 peer-reviewed clinical trial reports 78% efficacy, while a 2024 preprint reports 45% efficacy with a larger sample size. The synthesis agent must produce a recommendation for a medical advisory board. Which approach correctly handles the conflicting sources?",
+    "options": {
+      "A": "Average the two values (61.5%) and present it as the best estimate with a note about variance between studies",
+      "B": "Use the 2024 preprint as it has a larger sample size and is more recent, noting it supersedes the 2022 study",
+      "C": "Present both findings with full provenance: source identity, publication date, peer-review status, sample size, methodology, and any methodological differences that may explain the discrepancy. Let the advisory board weigh the evidence",
+      "D": "Exclude both findings and report that no reliable consensus exists, recommending further research before any conclusions"
+    },
+    "feedback": {
+      "A": "Averaging conflicting scientific results is methodologically invalid. The studies may have different populations, methodologies, or endpoints. The average has no scientific meaning and obscures the actual disagreement.",
+      "B": "Recency and sample size alone do not determine reliability. The preprint has not undergone peer review, and simply picking one source discards valuable context that the advisory board needs for informed decision-making.",
+      "C": "For a medical advisory board, preserving full provenance is critical. The board needs to weigh peer-review status, sample size, methodology differences, and temporal context. Annotating both sources with complete metadata enables informed human judgment on conflicting scientific evidence.",
+      "D": "Excluding available evidence is unhelpful. The advisory board can make informed decisions with properly attributed conflicting data. Withholding findings because they conflict reduces the board's ability to assess the situation."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 27,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "Your CI/CD pipeline uses a system prompt with a tool named 'check_security' and also includes instructions that say 'check the security of each function'. Developers report that the model sometimes produces a text-based security analysis instead of calling the check_security tool. What is the most likely cause?",
+    "options": {
+      "A": "The 'check the security' instruction keyword-overlaps the 'check_security' tool name, so the model follows the text instead of calling the tool.",
+      "B": "The system prompt has grown too long, so the model skips over the tool definitions near the end and never registers that check_security is available to call.",
+      "C": "The model's temperature is set too high, which is causing it to select tools at random rather than by their fit to the request in hand, so the wrong tool wins.",
+      "D": "The model cannot call tools at all from inside a CI/CD pipeline context, so the calls never reach it and nothing is extracted at all."
+    },
+    "feedback": {
+      "A": "When system prompt instructions use phrasing that closely mirrors tool names, the model can interpret 'check the security' as a general instruction rather than a trigger for the check_security tool. Distinct naming reduces this ambiguity.",
+      "B": "System prompt length does not cause tool definitions to be skipped. The model processes tools and instructions together. The issue is keyword overlap creating ambiguity.",
+      "C": "Temperature affects randomness in generation but is not the primary cause of tool call confusion. The issue is prompt design, not sampling parameters.",
+      "D": "Tool calling works in any context. The issue is prompt design, not an environmental limitation."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 28,
+    "domain": "D3 Claude Code Configuration & Workflows",
+    "question": "A team has a /deploy-check skill that verifies deployment readiness. It needs to: (1) read configuration files across the repo, (2) run bash commands to check service health, (3) produce a lengthy multi-page report, and (4) never modify any source code. The skill should be available to the entire team. Which SKILL.md configuration satisfies all four requirements?",
+    "options": {
+      "A": "Place in .claude/skills/ with allowed-tools: [\"Read\", \"Grep\", \"Glob\"] and context: fork",
+      "B": "Place in .claude/skills/ with allowed-tools: [\"Read\", \"Grep\", \"Glob\", \"Bash\"] and context: fork",
+      "C": "Place in .claude/skills/ with allowed-tools: [\"Read\", \"Grep\", \"Glob\", \"Bash\"]",
+      "D": "Place in ~/.claude/skills/ with allowed-tools: [\"Read\", \"Grep\", \"Glob\", \"Bash\", \"Write\"] and context: fork"
+    },
+    "feedback": {
+      "A": "This configuration excludes Bash, which is needed for running service health check commands (requirement 2). Without Bash access, the skill cannot verify that services are running and responsive.",
+      "B": "The skill is in .claude/skills/ for team access (requirement 4 via version control). allowed-tools includes Read, Grep, and Glob for reading configuration files (requirement 1), Bash for running health check commands (requirement 2), and excludes Write and Edit to prevent source code modification (requirement 4). context: fork isolates the lengthy report from the main conversation (requirement 3). Current state (checked 14 August 2026): the live skills reference defines `allowed-tools` as \"Tools Claude can use without asking permission during the turn that invokes this skill\", with `disallowed-tools` removing tools from the pool. The exam guide frames it as restricting access, so answer that on the exam.",
+      "C": "This configuration is missing context: fork. Without it, the lengthy multi-page deployment report would clutter the main conversation context, violating requirement 3.",
+      "D": "Two problems: ~/.claude/skills/ is user-scoped, not shared with the team. Including Write in allowed-tools violates the requirement that the skill must never modify source code."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 29,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "An agent occasionally processes international transfers without required compliance checks. The compliance team requires 100% enforcement of anti-money laundering (AML) checks before any international transfer. What is the correct approach?",
+    "options": {
+      "A": "Add a PostToolUse hook to flag completed transfers that skipped AML checks",
+      "B": "Add detailed AML check instructions to the system prompt with examples of correct behaviour",
+      "C": "Implement a PreToolUse hook that blocks transfer execution until AML verification returns a pass result",
+      "D": "Train the agent with few-shot examples showing the correct AML verification workflow"
+    },
+    "feedback": {
+      "A": "PostToolUse hooks run after execution. By the time the hook fires, the non-compliant transfer has already been processed. Prevention is required, not detection.",
+      "B": "Prompt instructions provide probabilistic compliance. With international transfers and AML regulations, a single failure could result in legal penalties. 100% enforcement requires deterministic guarantees.",
+      "C": "A hook intercepts the outgoing tool call before execution and physically blocks it until the compliance check passes. This provides the deterministic guarantee that AML rules require.",
+      "D": "Few-shot examples improve accuracy but do not guarantee 100% compliance. Regulatory requirements demand deterministic enforcement via hooks."
+    },
+    "correct_answer": "C"
+  },
+  {
+    "id": 30,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "The moderation system auto-removes posts classified as policy violations. Production logs reveal that 3% of auto-removed posts were legitimate content (false positives), generating user complaints and eroding platform trust. The team considers two approaches: (A) escalate all borderline cases to human reviewers, or (B) add a confidence threshold where only high-confidence violations are auto-removed and everything else goes to human review. Which approach is better and why?",
+    "options": {
+      "A": "Neither — instead lower the classification threshold so fewer posts are flagged as violations",
+      "B": "Approach B: auto-remove only high-confidence violations, escalate uncertain cases to human review, and auto-approve high-confidence safe content.",
+      "C": "Approach A: escalate every borderline case, because human reviewers are more accurate than the classifier and a 3% false-positive rate is a trust problem.",
+      "D": "Approach B, but apply a single fixed 95% confidence threshold to every category regardless of how costly a false positive is for that content type."
+    },
+    "feedback": {
+      "A": "Lowering the threshold reduces false positives but increases false negatives (genuine violations going undetected). This trades one problem for another rather than adding an appropriate escalation path.",
+      "B": "Confidence-based routing creates a tiered system: high-confidence violations are actioned immediately, high-confidence safe content passes through, and uncertain cases receive human review. This balances speed, accuracy, and reviewer workload while directly addressing the false positive problem.",
+      "C": "Escalating all borderline cases overwhelms the human review queue without leveraging the system's ability to handle clear-cut cases autonomously. The goal is to route intelligently, not to defer everything.",
+      "D": "A single fixed threshold across all categories ignores that violation types have different risk profiles. The threshold should be calibrated per category based on the cost of false positives versus false negatives."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 31,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation system's prompt instructs Claude to 'be conservative when moderating and err on the side of caution.' Reviewers find that innocuous posts about cooking with knives, news articles about violence, and fictional war stories are all being flagged as policy violations. What is the root cause and fix?",
+    "options": {
+      "A": "Replace 'be conservative' with explicit categorical criteria defining each violation category with concrete examples.",
+      "B": "Add an allowlist of safe topics such as cooking, news and fiction that should never be flagged at all by the classifier.",
+      "C": "The model is too sensitive, so lower the temperature until it stops over-flagging borderline posts in the moderation queue.",
+      "D": "Add a second moderation pass that re-reads each flagged post under the same 'be conservative' guidance and strips out the false positives before any action."
+    },
+    "feedback": {
+      "A": "Vague directives like 'be conservative' give the model no basis for distinguishing between genuine violations and legitimate content that mentions sensitive topics. Explicit criteria with examples of both violations and non-violations (news, fiction, educational content) enable consistent, calibrated decisions.",
+      "B": "Allowlists are brittle and impossible to maintain comprehensively. New safe topics will constantly appear. The fix is better criteria that teach the model to distinguish context, not a growing list of exceptions.",
+      "C": "Temperature affects randomness, not the interpretation of moderation criteria. The over-flagging is caused by vague instructions, not sampling behaviour.",
+      "D": "A second pass using the same vague 'be conservative' criteria will reproduce the same false positives. Fix the criteria first; add verification layers second."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 32,
+    "domain": "D4 Prompt Engineering & Structured Output",
+    "question": "The moderation team asks a single Claude session to classify a post, then immediately asks the same session to independently review its own classification for quality assurance. The 'review' agrees with the original classification 98% of the time, including cases that human auditors later identify as errors. Why is this self-review ineffective?",
+    "options": {
+      "A": "The model needs a stronger review prompt with explicit instructions to look for errors in the original classification",
+      "B": "The same session retains the model's reasoning, so it stays anchored to its classification; use a fresh independent instance to review.",
+      "C": "The model's temperature is too low, producing deterministic agreement — increase temperature for the review pass",
+      "D": "Self-review is effective but the 98% agreement rate simply reflects high initial accuracy — the 2% disagreement is the expected error rate"
+    },
+    "feedback": {
+      "A": "Stronger instructions do not overcome the fundamental limitation. The same session retains the reasoning context from the original classification, biasing the review toward agreement.",
+      "B": "Self-review within the same session is fundamentally limited because the model's conversation context includes the original reasoning. It will naturally be anchored to its prior conclusions. An independent instance with no access to the original decision evaluates the content fresh, providing genuine quality assurance.",
+      "C": "Temperature affects sampling randomness, not reasoning independence. Higher temperature may occasionally produce different outputs but does not create genuine independent review. The model is still anchored to its own prior reasoning in the same session.",
+      "D": "Human auditors found errors in cases where the self-review agreed, proving the 98% agreement does not reflect accuracy. The self-review is confirming errors, not catching them, due to same-session reasoning bias."
+    },
+    "correct_answer": "B"
+  },
+  {
+    "id": 33,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A customer support agent uses a token budget of 200k tokens. The system prompt consumes 8k tokens, conversation history takes 120k tokens, and the most recent tool call result returned 65k tokens. The agent is struggling to produce thorough responses. What is the most likely cause and fix?",
+    "options": {
+      "A": "The system prompt is too large at 8k tokens and should be reduced to under 2k to leave more room for the response",
+      "B": "The conversation history should be cleared entirely to give the model a fresh context for each response",
+      "C": "The model needs a higher max_tokens parameter to produce longer responses",
+      "D": "Input already consumes 193k of the 200k budget. Summarise history or trim verbose tool results."
+    },
+    "feedback": {
+      "A": "The system prompt at 8k is a small fraction of the budget. Reducing it by 6k would help marginally but misidentifies the problem — conversation history and tool results are consuming the vast majority of the budget.",
+      "B": "Clearing history would free tokens but destroy conversation continuity. The customer would need to repeat their issue. Selective summarisation is far preferable to wholesale deletion.",
+      "C": "max_tokens caps the response length but cannot exceed the remaining context budget. If 193k of 200k is consumed by input, increasing max_tokens beyond 7k would have no effect.",
+      "D": "Token budget is shared: system prompt + conversation history + tool results + available for response = total budget. With 193k consumed, only 7k remains for the response. The fix targets the largest movable allocations: summarise older history or trim verbose tool output."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 34,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "A developer resumes a Claude Code session after modifying 3 files in a 50-file codebase. The agent gives contradictory advice about the modified files because it is reasoning from stale tool results. What is the correct approach?",
+    "options": {
+      "A": "Start a fresh session with an injected summary of prior findings, noting the 3 changed files for targeted re-analysis.",
+      "B": "Resume the session and ask the agent to re-read only the 3 modified files, overwriting the stale results already in the context window.",
+      "C": "Start a completely new session and have the agent re-analyse all 50 files from scratch so nothing stale survives into the new context.",
+      "D": "Use fork_session to branch the session so the new branch picks up the 3 changed files while the original keeps the earlier state."
+    },
+    "feedback": {
+      "A": "A fresh session with summary injection avoids stale tool results. Specifying the 3 changed files enables targeted re-analysis without wasting time on unchanged files.",
+      "B": "Resuming preserves the stale tool results in context, and a later read does not overwrite an earlier one. The agent may still reason from outdated information for other decisions. A fresh start with summary injection is more reliable.",
+      "C": "Re-analysing all 50 files is wasteful when only 3 changed. A fresh session with summary injection plus targeted re-reading of the 3 changed files is more efficient.",
+      "D": "fork_session creates an independent exploration branch from a shared baseline, and that baseline still carries the stale results. It is for divergent approaches, not for updating stale context after file changes."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 35,
+    "domain": "D1 Agentic Architecture & Orchestration",
+    "question": "The content moderation system uses a hub-and-spoke architecture with a coordinator that routes posts to specialist subagents: a text classifier, an image analyser, and a policy enforcer. The team notices that the image analyser sometimes directly calls the policy enforcer's action tools to remove posts, bypassing the coordinator. What is the architectural violation and how should it be fixed?",
+    "options": {
+      "A": "Merge the image analyser and policy enforcer into a single subagent to simplify the communication flow",
+      "B": "Add a message queue between the image analyser and the policy enforcer so the removal is decoupled and the coordinator can observe it after the fact.",
+      "C": "Give the image analyser its own copy of the policy enforcer's action tools so it can remove posts itself without calling another subagent.",
+      "D": "The image analyser breaks hub-and-spoke isolation; scope its tools to image analysis and route all results back through the coordinator."
+    },
+    "feedback": {
+      "A": "Merging subagents with distinct responsibilities (analysis vs enforcement) violates separation of concerns. The image analyser and policy enforcer have fundamentally different roles and tool requirements.",
+      "B": "An async queue between subagents still bypasses the coordinator, and observing a removal after it has happened is not routing it. In hub-and-spoke, all inter-agent communication must flow through the coordinator regardless of synchronicity.",
+      "C": "Duplicating action tools across subagents creates inconsistent enforcement and makes policy changes harder to propagate. The issue is the communication pattern, not tool availability.",
+      "D": "In hub-and-spoke orchestration, subagents must be isolated and communicate only through the coordinator. The image analyser should return its classification result to the coordinator, which then decides whether to invoke the policy enforcer. Direct subagent-to-subagent communication breaks the architecture."
+    },
+    "correct_answer": "D"
+  },
+  {
+    "id": 36,
+    "domain": "D3 Claude Code Configuration & Workflows",
+    "question": "A CI/CD pipeline runs three Claude Code steps in sequence: (1) generate a changelog from git commits, (2) review the changelog for accuracy, and (3) check for breaking changes. The team notices that step 2 never flags inaccuracies and step 3 misses obvious breaking changes that the changelog omits. What is the root cause?",
+    "options": {
+      "A": "The three steps share session context, so steps 2 and 3 inherit step 1's reasoning instead of judging the changelog",
+      "B": "The steps need to use --output-format json so that each step can parse the previous step's structured output",
+      "C": "The CLAUDE.md file does not contain changelog formatting standards, so the review step has no criteria to evaluate against",
+      "D": "The -p flag is not being used, causing each step to wait for interactive input"
+    },
+    "feedback": {
+      "A": "When review and analysis steps share context with the generation step, they inherit the original reasoning and are less likely to identify gaps or errors. Independent sessions force each step to evaluate the changelog from scratch without bias from the generation reasoning. Session context isolation is critical for CI/CD review pipelines.",
+      "B": "Output format affects how results are structured, not whether reviews are thorough. JSON output would help with parsing but would not address the fundamental issue of review steps retaining generation context bias.",
+      "C": "Missing formatting standards would affect the quality of the generated changelog, not the review's ability to catch inaccuracies. The pattern of reviews consistently missing issues points to shared-context bias, not missing criteria.",
+      "D": "If -p were missing, the pipeline would hang rather than produce output that misses issues. The steps are producing output (the changelog is generated, reviews complete), but the reviews are ineffective."
+    },
+    "correct_answer": "A"
+  },
+  {
+    "id": 37,
+    "domain": "D5 Context Management & Reliability",
+    "question": "A web search subagent in a multi-agent research system times out while researching a complex topic. You need to design how this failure information flows back to the coordinator. Which approach best enables intelligent recovery?",
+    "options": {
+      "A": "Propagate the timeout exception to a top-level handler that terminates the entire research workflow at once, discarding everything.",
+      "B": "Return structured error context including failure type, attempted query, partial results, and potential alternative approaches",
+      "C": "Catch the timeout and return an empty result set marked as successful, so the rest of the workflow carries on regardless of the failure.",
+      "D": "Implement automatic retry with exponential backoff, returning a generic 'search unavailable' status only after all retries are exhausted"
+    },
+    "feedback": {
+      "A": "Workflow termination wastes partial results from other subagents that may have completed successfully.",
+      "B": "This gives the coordinator everything it needs to decide: retry with modified query, try an alternative approach, or proceed with partial results.",
+      "C": "Silent suppression prevents any recovery. The coordinator believes the search succeeded and found nothing, so it will not attempt alternatives.",
+      "D": "The generic status hides valuable context from the coordinator, preventing informed recovery decisions."
+    },
+    "correct_answer": "B"
+  }
+]
