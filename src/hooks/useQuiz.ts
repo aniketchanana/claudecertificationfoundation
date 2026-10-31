@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   clearStoredProgress,
   loadStoredProgress,
@@ -36,25 +36,58 @@ function selectionSize(selected: OptionLetter | OptionLetter[] | undefined) {
   return Array.isArray(selected) ? selected.length : 1
 }
 
+function sameDomainFilter(
+  saved: string | null | undefined,
+  current: string | null,
+) {
+  return (saved ?? null) === current
+}
+
 export function useQuiz(
   questions: Question[],
   paperId: PaperId,
   mode: StudyMode,
+  initialIndex?: number,
+  domainFilter: string | null = null,
 ) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<AnswerMap>({})
   const [examSubmitted, setExamSubmitted] = useState(false)
   const [ready, setReady] = useState(false)
+  const appliedDeepLink = useRef(false)
 
   useEffect(() => {
+    const clamp = (index: number) =>
+      Math.min(Math.max(index, 0), Math.max(questions.length - 1, 0))
+
     const saved = loadStoredProgress()
-    if (saved && saved.paperId === paperId && saved.mode === mode) {
-      setCurrentIndex(
-        Math.min(
-          Math.max(saved.currentIndex, 0),
-          Math.max(questions.length - 1, 0),
-        ),
-      )
+    const shouldUseDeepLink =
+      !appliedDeepLink.current &&
+      initialIndex !== undefined &&
+      Number.isFinite(initialIndex) &&
+      initialIndex >= 0
+
+    if (shouldUseDeepLink) {
+      appliedDeepLink.current = true
+      const index = clamp(initialIndex)
+      setCurrentIndex(index)
+      setAnswers({})
+      setExamSubmitted(false)
+      saveStoredProgress({
+        paperId,
+        mode,
+        currentIndex: index,
+        answers: {},
+        examSubmitted: false,
+        domainFilter,
+      })
+    } else if (
+      saved &&
+      saved.paperId === paperId &&
+      saved.mode === mode &&
+      sameDomainFilter(saved.domainFilter, domainFilter)
+    ) {
+      setCurrentIndex(clamp(saved.currentIndex))
       setAnswers(saved.answers)
       setExamSubmitted(Boolean(saved.examSubmitted))
     } else {
@@ -67,10 +100,11 @@ export function useQuiz(
         currentIndex: 0,
         answers: {},
         examSubmitted: false,
+        domainFilter,
       })
     }
     setReady(true)
-  }, [paperId, mode, questions.length])
+  }, [paperId, mode, questions.length, initialIndex, domainFilter])
 
   useEffect(() => {
     if (!ready) return
@@ -80,8 +114,17 @@ export function useQuiz(
       currentIndex,
       answers,
       examSubmitted,
+      domainFilter,
     })
-  }, [answers, currentIndex, examSubmitted, mode, paperId, ready])
+  }, [
+    answers,
+    currentIndex,
+    examSubmitted,
+    mode,
+    paperId,
+    ready,
+    domainFilter,
+  ])
 
   const current = questions[currentIndex]
   const selected = current ? answers[current.id] : undefined

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1115"/>
+      <stop offset="100%" stop-color="#1a1520"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="48" y="48" width="1104" height="534" rx="24" fill="none" stroke="#f97316" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="100" y="200" fill="#fb923c" font-family="Segoe UI, system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">CCARF PRACTICE EXAM</text>
+  <text x="100" y="290" fill="#f4efe6" font-family="Segoe UI, system-ui, sans-serif" font-size="56" font-weight="700">Claude Certified Architect</text>
+  <text x="100" y="360" fill="#f4efe6" font-family="Segoe UI, system-ui, sans-serif" font-size="56" font-weight="700">Foundations — Free Questions</text>
+  <text x="100" y="450" fill="#a89f91" font-family="Segoe UI, system-ui, sans-serif" font-size="28">220+ practice questions with explanations · All 5 domains</text>
+  <text x="100" y="520" fill="#8a8276" font-family="Segoe UI, system-ui, sans-serif" font-size="22">aniketchanana.github.io/claudecertificationfoundation</text>
+</svg>

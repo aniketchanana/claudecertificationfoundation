@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { answersMatch, normalizeCorrect } from '../hooks/useQuiz'
+import { SITE_URL } from '../lib/site'
 import type { AnswerMap, OptionLetter, Question } from '../types'
 
 type ExamResultsProps = {
+  paperLabel: string
   questions: Question[]
   answers: AnswerMap
   correctCount: number
@@ -21,6 +24,7 @@ function selectionSize(selected: OptionLetter | OptionLetter[] | undefined) {
 }
 
 export function ExamResults({
+  paperLabel,
   questions,
   answers,
   correctCount,
@@ -28,11 +32,40 @@ export function ExamResults({
   onReset,
   onReviewQuestion,
 }: ExamResultsProps) {
+  const [shareState, setShareState] = useState<'idle' | 'copied' | 'shared'>(
+    'idle',
+  )
   const unanswered = questions.length - correctCount - incorrectCount
   const pct =
     questions.length > 0
       ? Math.round((correctCount / questions.length) * 100)
       : 0
+
+  const shareText = `I scored ${correctCount}/${questions.length} (${pct}%) on CCARF ${paperLabel} practice — free Claude Certified Architect Foundations questions: ${SITE_URL}`
+
+  const handleShare = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({
+          title: `CCARF ${paperLabel} score`,
+          text: shareText,
+          url: SITE_URL,
+        })
+        setShareState('shared')
+        return
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setShareState('copied')
+      window.setTimeout(() => setShareState('idle'), 2000)
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <div className="w-full space-y-5">
@@ -59,13 +92,26 @@ export function ExamResults({
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onReset}
-          className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm text-[#d9d2c5] transition hover:border-orange-400/40"
-        >
-          Back to start
-        </button>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="rounded-lg border border-orange-500/40 bg-orange-500/20 px-4 py-2 text-sm font-medium text-orange-100 transition hover:bg-orange-500/30"
+          >
+            {shareState === 'copied'
+              ? 'Copied!'
+              : shareState === 'shared'
+                ? 'Shared'
+                : 'Share score'}
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-lg border border-white/15 px-4 py-2 text-sm text-[#d9d2c5] transition hover:border-orange-400/40"
+          >
+            Back to start
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -118,10 +164,8 @@ export function ExamResults({
               </p>
               {hasAnswer && (
                 <p className="mt-2 text-sm leading-relaxed text-[#a89f91]">
-                  {(ok
-                    ? correct.map((letter) => q.feedback[letter])
-                    : correct.map((letter) => q.feedback[letter])
-                  )
+                  {correct
+                    .map((letter) => q.feedback[letter])
                     .filter(Boolean)
                     .join(' ')}
                 </p>

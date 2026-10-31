@@ -19,7 +19,7 @@ export type QuizProgress = {
   answers: AnswerMap
 }
 
-export type PaperId = 'paper-1' | 'paper-2' | 'paper-3' | 'paper-4'
+export type PaperId = 'paper-1' | 'paper-2' | 'paper-3' | 'paper-4' | 'paper-5'
 
 export type Paper = {
   id: PaperId

@@ -1,4 +1,5 @@
 import type { Paper, PaperId, StudyMode } from '../types'
+import { BROWSE_LINKS } from '../lib/site'
 import { Disclaimer } from './Disclaimer'
 
 type OnboardingProps = {
@@ -44,8 +45,8 @@ export function Onboarding({
           Set up your session
         </h1>
         <p className="text-sm leading-relaxed text-[#a89f91] sm:text-base">
-          Choose a paper and a study mode. Progress is saved for one session at
-          a time.
+          A practice set by Aniket Chanana. Choose a paper and a study mode.
+          Progress is saved for one session at a time.
         </p>
       </div>
 
@@ -120,6 +121,18 @@ export function Onboarding({
       >
         Start
       </button>
+
+      <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-center text-xs text-[#8a8276]">
+        {BROWSE_LINKS.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="underline-offset-2 hover:text-orange-200 hover:underline"
+          >
+            {link.label}
+          </a>
+        ))}
+      </p>
       </div>
       <Disclaimer />
     </div>
