@@ -4,7 +4,11 @@ Free practice questions for the **Claude Certified Architect – Foundations** c
 
 **Live app:** [https://aniketchanana.github.io/claudecertificationfoundation/](https://aniketchanana.github.io/claudecertificationfoundation/)
 
-[![CCARF Practice Exam flashcard UI](./public/app-screenshot.png)](https://aniketchanana.github.io/claudecertificationfoundation/)
+<p align="center">
+  <a href="https://aniketchanana.github.io/claudecertificationfoundation/">
+    <img src="public/app-screenshot.jpg" alt="CCARF Practice Exam flashcard UI" width="900" />
+  </a>
+</p>
 
 If this helps you prepare, star the repo so other learners can find it.
 
