@@ -6,7 +6,7 @@ Free practice questions for the **Claude Certified Architect – Foundations** c
 
 <p align="center">
   <a href="https://aniketchanana.github.io/claudecertificationfoundation/">
-    <img src="public/app-screenshot.jpg" alt="CCARF Practice Exam flashcard UI" width="900" />
+    <img width="1385" height="853" alt="image" src="https://github.com/user-attachments/assets/aeae3177-3f9c-43bb-afcb-ec9ba65dc63e" />
   </a>
 </p>
 
