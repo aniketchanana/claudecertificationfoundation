@@ -10,11 +10,23 @@ export function sitePath(path = ''): string {
   return `${BASE_URL}${clean}`
 }
 
+/** Absolute URLs so browse links work from local `vite` too (SEO pages only exist in the built deploy). */
+export function absoluteSitePath(path = ''): string {
+  const clean = path.replace(/^\//, '')
+  return `${SITE_URL}${clean}`
+}
+
 export const BROWSE_LINKS = [
-  { href: sitePath('practice-questions/'), label: 'All practice questions' },
-  { href: sitePath('guides/ccarf-exam-domains/'), label: 'Exam domains guide' },
   {
-    href: sitePath('guides/claude-code-hooks/'),
+    href: absoluteSitePath('practice-questions/'),
+    label: 'All practice questions',
+  },
+  {
+    href: absoluteSitePath('guides/ccarf-exam-domains/'),
+    label: 'Exam domains guide',
+  },
+  {
+    href: absoluteSitePath('guides/claude-code-hooks/'),
     label: 'Claude Code hooks cheat sheet',
   },
 ] as const

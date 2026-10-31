@@ -575,7 +575,7 @@ function renderHubPage(allQuestions) {
 
   const paperCards = PAPERS.map((p) => {
     const count = allQuestions.filter((q) => q.paperId === p.id).length
-    return `<div class="card"><a href="${relUrl(`papers/${p.id}/`)}">${escapeHtml(p.label)}</a><span class="sub">${escapeHtml(p.description)} · ${count} questions</span></div>`
+    return `<div class="card"><a href="${relUrl(`papers/${p.id}/`)}">${escapeHtml(p.label)}</a><span class="sub">${escapeHtml(p.description)} (${count})</span></div>`
   }).join('\n')
 
   const domainCards = DOMAINS.map((d) => {
