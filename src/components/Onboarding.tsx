@@ -1,6 +1,7 @@
+import { BROWSE_LINKS, isExternalHref } from '../lib/site'
 import type { Paper, PaperId, StudyMode } from '../types'
-import { BROWSE_LINKS } from '../lib/site'
 import { Disclaimer } from './Disclaimer'
+import { SiteHeader } from './SiteHeader'
 
 type OnboardingProps = {
   papers: Paper[]
@@ -14,15 +15,19 @@ type OnboardingProps = {
 const MODES: { id: StudyMode; title: string; blurb: string }[] = [
   {
     id: 'flashcard',
-    title: 'Flashcard mode',
-    blurb: 'Instant feedback after each answer — best for learning as you go.',
+    title: 'Flashcard',
+    blurb: 'Feedback after each answer',
   },
   {
     id: 'exam',
-    title: 'Full exam mode',
-    blurb: 'Answer everything first. Results and explanations unlock at the end.',
+    title: 'Full exam',
+    blurb: 'Results unlock at the end',
   },
 ]
+
+function paperBlurb(description: string) {
+  return description.split(' · ')[0]
+}
 
 export function Onboarding({
   papers,
@@ -36,103 +41,115 @@ export function Onboarding({
 
   return (
     <div className="flex min-h-svh flex-col">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-4 py-10 sm:px-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold tracking-[0.2em] text-orange-400/90 uppercase">
-          CCARF Practice Exam
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-[#f4efe6] sm:text-4xl">
-          Set up your session
-        </h1>
-        <p className="text-sm leading-relaxed text-[#a89f91] sm:text-base">
-          A practice set by Aniket Chanana. Choose a paper and a study mode.
-          Progress is saved for one session at a time.
-        </p>
-      </div>
+      <SiteHeader />
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-5 px-4 py-5 sm:px-6">
+        <header className="space-y-1">
+          <p className="text-xs font-semibold tracking-[0.2em] text-orange-400/90 uppercase">
+            CCARF Practice Exam
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#f4efe6] sm:text-3xl">
+            Set up your session
+          </h1>
+          <p className="text-sm leading-snug text-[#a89f91]">
+            Choose a paper and a study mode. Progress is saved for one session
+            at a time.
+          </p>
+        </header>
 
-      <section className="space-y-3">
-        <h2 className="text-xs font-semibold tracking-[0.16em] text-[#8a8276] uppercase">
-          1 · Question paper
-        </h2>
-        <div className="grid gap-2">
-          {papers.map((paper) => {
-            const selected = paper.id === selectedPaperId
-            return (
-              <button
-                key={paper.id}
-                type="button"
-                onClick={() => onSelectPaper(paper.id)}
-                className={`rounded-xl border px-4 py-3 text-left transition ${
-                  selected
-                    ? 'border-orange-400/70 bg-orange-500/20'
-                    : 'border-white/12 bg-white/5 hover:border-orange-400/40'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold tracking-[0.16em] text-[#8a8276] uppercase">
+            1 · Question paper
+          </h2>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            {papers.map((paper) => {
+              const selected = paper.id === selectedPaperId
+              return (
+                <button
+                  key={paper.id}
+                  type="button"
+                  onClick={() => onSelectPaper(paper.id)}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    selected
+                      ? 'border-orange-400/70 bg-orange-500/20'
+                      : 'border-white/12 bg-white/5 hover:border-orange-400/40'
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
                     <p className="font-semibold text-[#f4efe6]">{paper.label}</p>
-                    <p className="mt-0.5 text-sm text-[#a89f91]">
-                      {paper.description}
-                    </p>
+                    <span
+                      className={`shrink-0 text-xs tabular-nums ${
+                        selected ? 'text-orange-200' : 'text-[#8a8276]'
+                      }`}
+                    >
+                      {paper.questionCount}q
+                    </span>
                   </div>
-                  <span className="text-xs text-[#8a8276]">
-                    {paper.questionCount}q
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </section>
+                  <p className="mt-0.5 text-xs leading-snug text-[#a89f91]">
+                    {paperBlurb(paper.description)}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </section>
 
-      <section className="space-y-3">
-        <h2 className="text-xs font-semibold tracking-[0.16em] text-[#8a8276] uppercase">
-          2 · Study mode
-        </h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {MODES.map((mode) => {
-            const selected = mode.id === selectedMode
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold tracking-[0.16em] text-[#8a8276] uppercase">
+            2 · Study mode
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {MODES.map((mode) => {
+              const selected = mode.id === selectedMode
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => onSelectMode(mode.id)}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    selected
+                      ? 'border-orange-400/70 bg-orange-500/20'
+                      : 'border-white/12 bg-white/5 hover:border-orange-400/40'
+                  }`}
+                >
+                  <p className="font-semibold text-[#f4efe6]">{mode.title}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-[#a89f91]">
+                    {mode.blurb}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <button
+          type="button"
+          disabled={!canStart}
+          onClick={onStart}
+          className="rounded-xl border border-orange-500/50 bg-orange-500/25 px-6 py-3 text-base font-semibold text-orange-50 transition hover:bg-orange-500/35 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Start
+        </button>
+
+        <nav
+          aria-label="Study resources"
+          className="flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 pt-4 text-sm"
+        >
+          {BROWSE_LINKS.map((link) => {
+            const external = isExternalHref(link.href)
             return (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => onSelectMode(mode.id)}
-                className={`rounded-xl border px-4 py-3 text-left transition ${
-                  selected
-                    ? 'border-orange-400/70 bg-orange-500/20'
-                    : 'border-white/12 bg-white/5 hover:border-orange-400/40'
-                }`}
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-orange-300/90 underline-offset-2 hover:text-orange-200 hover:underline"
+                {...(external
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
               >
-                <p className="font-semibold text-[#f4efe6]">{mode.title}</p>
-                <p className="mt-1 text-sm leading-snug text-[#a89f91]">
-                  {mode.blurb}
-                </p>
-              </button>
+                {link.label}
+              </a>
             )
           })}
-        </div>
-      </section>
-
-      <button
-        type="button"
-        disabled={!canStart}
-        onClick={onStart}
-        className="rounded-xl border border-orange-500/50 bg-orange-500/25 px-6 py-3 text-base font-semibold text-orange-50 transition hover:bg-orange-500/35 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Start
-      </button>
-
-      <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-center text-xs text-[#8a8276]">
-        {BROWSE_LINKS.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            className="underline-offset-2 hover:text-orange-200 hover:underline"
-          >
-            {link.label}
-          </a>
-        ))}
-      </p>
+        </nav>
       </div>
       <Disclaimer />
     </div>

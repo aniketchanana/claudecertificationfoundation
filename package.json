@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/generate-seo-pages.mjs",
-    "seo": "node scripts/generate-seo-pages.mjs",
+    "dev": "npm run seo:dev && vite",
+    "build": "tsc -b && vite build && node scripts/generate-seo-pages.mjs --out dist",
+    "seo": "node scripts/generate-seo-pages.mjs --out dist",
+    "seo:dev": "node scripts/generate-seo-pages.mjs --out seo-pages",
     "lint": "oxlint",
     "preview": "vite preview"
   },

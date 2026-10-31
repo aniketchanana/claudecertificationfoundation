@@ -31,7 +31,7 @@ If this helps you prepare, star the repo so other learners can find it.
 | **D4** Prompt Engineering & Structured Output | Prompting, schemas, structured outputs |
 | **D5** Context Management & Reliability | Context windows, retrieval, evals, reliability |
 
-Study guides: [Exam domains explained](https://aniketchanana.github.io/claudecertificationfoundation/guides/ccarf-exam-domains/) · [Claude Code hooks cheat sheet](https://aniketchanana.github.io/claudecertificationfoundation/guides/claude-code-hooks/)
+Study guides: [Exam overview](https://aniketchanana.github.io/claudecertificationfoundation/guides/ccarf-exam-overview/) · [Domains](https://aniketchanana.github.io/claudecertificationfoundation/guides/ccarf-exam-domains/) · [Scenarios](https://aniketchanana.github.io/claudecertificationfoundation/guides/ccarf-exam-scenarios/) · [Claude Code notes](https://aniketchanana.github.io/claudecertificationfoundation/guides/claude-code-hooks/)
 
 ## Practice papers
 

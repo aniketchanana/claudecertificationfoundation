@@ -1,5 +1,3 @@
-import { BROWSE_LINKS } from '../lib/site'
-
 const LINKS = [
   {
     href: 'mailto:aniket.chanana@gmail.com',
@@ -37,24 +35,20 @@ export function Disclaimer() {
             </a>
           ))}
         </p>
-        <nav
-          aria-label="Browse study resources"
-          className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs"
-        >
-          {BROWSE_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-[#a89f91] underline-offset-2 hover:text-orange-200 hover:underline"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[#8a8276]">
+        <p className="mt-1 max-w-md text-xs leading-relaxed text-[#8a8276]">
           These questions were gathered from publicly available sources online.
           They were not copied from the real exam. They are included only to
-          give you a taste of the topics and the way questions are asked.
+          give you a taste of the topics and the way questions are asked. For a
+          full curriculum, see{' '}
+          <a
+            href="https://claudecertificationguide.com/learn"
+            target="_blank"
+            rel="noreferrer"
+            className="text-orange-300/90 underline-offset-2 hover:text-orange-200 hover:underline"
+          >
+            claudecertificationguide.com/learn
+          </a>
+          .
         </p>
       </div>
     </footer>

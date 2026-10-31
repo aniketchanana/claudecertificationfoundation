@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Disclaimer } from './components/Disclaimer'
 import { ExamResults } from './components/ExamResults'
 import { Flashcard } from './components/Flashcard'
 import { Onboarding } from './components/Onboarding'
 import { Sidebar } from './components/Sidebar'
+import { SiteHeader } from './components/SiteHeader'
 import { DOMAINS, domainShortLabel } from './data/domains'
 import { getQuestionsForPaper, PAPERS } from './data/papers'
 import { useQuiz } from './hooks/useQuiz'
@@ -141,6 +141,7 @@ function QuizSessionBody({
   if (questions.length === 0 || !quiz.current) {
     return (
       <div className="flex min-h-svh flex-col">
+        <SiteHeader />
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
           <Sidebar
             paperLabel={paper.label}
@@ -165,7 +166,6 @@ function QuizSessionBody({
             or all domains.
           </main>
         </div>
-        <Disclaimer />
       </div>
     )
   }
@@ -181,6 +181,7 @@ function QuizSessionBody({
 
   return (
     <div className="flex min-h-svh flex-col">
+      <SiteHeader />
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
         <Sidebar
           paperLabel={paper.label}
@@ -255,7 +256,6 @@ function QuizSessionBody({
           )}
         </main>
       </div>
-      <Disclaimer />
     </div>
   )
 }

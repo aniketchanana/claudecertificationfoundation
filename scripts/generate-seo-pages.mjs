@@ -1,15 +1,29 @@
 #!/usr/bin/env node
 /**
- * Post-build SEO page generator for GitHub Pages.
- * Reads question JSON and writes static HTML into dist/.
+ * SEO page generator for GitHub Pages / local Vite.
+ * Reads question JSON and writes static HTML into --out (default: dist).
+ *
+ *   node scripts/generate-seo-pages.mjs
+ *   node scripts/generate-seo-pages.mjs --out seo-pages
  */
-import { mkdirSync, readFileSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { LEARN_URL, renderSiteHeader } from '../shared/site-header.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const DIST = join(ROOT, 'dist')
+const SITE_HEADER_CSS = readFileSync(join(ROOT, 'shared/site-header.css'), 'utf8')
+
+function parseOutDir(argv) {
+  const idx = argv.indexOf('--out')
+  if (idx !== -1 && argv[idx + 1]) {
+    return resolve(ROOT, argv[idx + 1])
+  }
+  return join(ROOT, 'dist')
+}
+
+const OUT = parseOutDir(process.argv.slice(2))
 const SITE_ORIGIN = 'https://aniketchanana.github.io'
 const BASE = '/claudecertificationfoundation'
 const SITE_URL = `${SITE_ORIGIN}${BASE}/`
@@ -53,40 +67,45 @@ const DOMAINS = [
     slug: 'agentic-architecture-orchestration',
     name: 'Agentic Architecture & Orchestration',
     full: 'D1 Agentic Architecture & Orchestration',
+    weight: '27%',
     intro:
-      'Questions on designing multi-agent systems, orchestration patterns, routing, handoffs, and how Claude agents collaborate to complete complex workflows.',
+      'Largest exam domain (~27%). Agentic loops, coordinator–subagent orchestration, Task-tool spawning, hooks for enforcement, session resume/fork, and production workflow handoffs.',
   },
   {
     id: 'D2',
     slug: 'tool-design-mcp-integration',
     name: 'Tool Design & MCP Integration',
     full: 'D2 Tool Design & MCP Integration',
+    weight: '18%',
     intro:
-      'Questions on Model Context Protocol (MCP), tool descriptions, tool scoping, and integrating external systems so Claude agents call the right tools reliably.',
+      'About 18% of the exam. MCP tool/resource design, clear tool descriptions, structured errors (isError), .mcp.json scoping, and choosing built-in tools (Read, Write, Edit, Bash, Grep, Glob).',
   },
   {
     id: 'D3',
     slug: 'claude-code-configuration-workflows',
     name: 'Claude Code Configuration & Workflows',
     full: 'D3 Claude Code Configuration & Workflows',
+    weight: '20%',
     intro:
-      'Questions on Claude Code hooks, CLAUDE.md, skills, slash commands, permissions, compaction, and developer workflow configuration.',
+      'About 20% of the exam. CLAUDE.md hierarchy, .claude/rules path scoping, slash commands, skills (context: fork), plan mode vs direct execution, hooks, and CI-friendly Claude Code usage.',
   },
   {
     id: 'D4',
     slug: 'prompt-engineering-structured-output',
     name: 'Prompt Engineering & Structured Output',
     full: 'D4 Prompt Engineering & Structured Output',
+    weight: '20%',
     intro:
-      'Questions on prompting strategies, system prompts, few-shot examples, XML tags, JSON schema / structured outputs, and evaluating prompt quality.',
+      'About 20% of the exam. Few-shot prompting, tool_use + JSON schemas, tool_choice, validation/retry loops, Message Batches API tradeoffs, and multi-pass review architectures.',
   },
   {
     id: 'D5',
     slug: 'context-management-reliability',
     name: 'Context Management & Reliability',
     full: 'D5 Context Management & Reliability',
+    weight: '15%',
     intro:
-      'Questions on context windows, retrieval, memory, reliability patterns, evaluation, and keeping long-running Claude agents grounded and correct.',
+      'About 15% of the exam. Context budgets, progressive summarization risks, lost-in-the-middle effects, escalation criteria, structured error propagation, and human-review calibration.',
   },
 ]
 
@@ -104,7 +123,6 @@ body {
 a { color: #fb923c; text-decoration: none; }
 a:hover { color: #fdba74; text-decoration: underline; }
 .wrap { max-width: 48rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
-.topnav { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; font-size: 0.85rem; margin-bottom: 1.75rem; color: #8a8276; }
 .eyebrow { color: #fb923c; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 0.5rem; }
 h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.25; color: #f4efe6; margin: 0 0 0.75rem; }
 h2 { font-size: 1.15rem; color: #f4efe6; margin: 2rem 0 0.75rem; }
@@ -120,6 +138,27 @@ h3 { font-size: 1rem; color: #f4efe6; margin: 1.25rem 0 0.5rem; }
 }
 .card a { color: #f4efe6; font-weight: 600; }
 .card .sub { display: block; margin-top: 0.3rem; font-size: 0.875rem; color: #a89f91; font-weight: 400; }
+a.card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none !important;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+a.card-link .title {
+  display: block;
+  color: #f4efe6;
+  font-weight: 600;
+}
+a.card-link:hover {
+  border-color: rgba(249,115,22,0.45);
+  background: rgba(249,115,22,0.08);
+}
+a.card-link:hover .title { color: #fdba74; }
+a.card-link:focus-visible {
+  outline: 2px solid #fb923c;
+  outline-offset: 2px;
+}
 .options { list-style: none; padding: 0; margin: 1rem 0; }
 .options li {
   border: 1px solid rgba(255,255,255,0.12);
@@ -166,6 +205,7 @@ details[open] summary { margin-bottom: 0.75rem; }
   border-radius: 0.3rem;
 }
 @media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+
 `
 
 
@@ -199,7 +239,7 @@ function relUrl(path) {
 }
 
 function writePage(relativePath, html) {
-  const full = join(DIST, relativePath)
+  const full = join(OUT, relativePath)
   mkdirSync(dirname(full), { recursive: true })
   writeFileSync(full, html, 'utf8')
 }
@@ -217,37 +257,38 @@ function layout({ title, description, canonicalPath, body, jsonLd }) {
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}" />
   <link rel="canonical" href="${canonical}" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="${relUrl('sitemap.xml')}" />
   <link rel="icon" type="image/svg+xml" href="${relUrl('favicon.svg')}" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${canonical}" />
   <meta property="og:image" content="${absUrl('/og-image.png')}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${absUrl('/og-image.png')}" />
   <meta name="robots" content="index, follow" />
-  <style>${SHARED_CSS}</style>
+  <style>${SITE_HEADER_CSS}${SHARED_CSS}</style>
   ${jsonLdBlock}
 </head>
 <body>
+  ${renderSiteHeader((path) => relUrl(path), canonicalPath)}
   <div class="wrap">
-    <nav class="topnav" aria-label="Site">
-      <a href="${relUrl('')}">Interactive app</a>
-      <a href="${relUrl('practice-questions/')}">All questions</a>
-      <a href="${relUrl('guides/ccarf-exam-domains/')}">Domains guide</a>
-      <a href="${relUrl('guides/claude-code-hooks/')}">Hooks cheat sheet</a>
-    </nav>
     ${body}
     <footer class="footer">
       Free CCARF / Claude Certified Architect Foundations (CCA-F / CCAR-F) practice questions.
       Not affiliated with Anthropic. Created by Aniket Chanana.
+      Curriculum:
+      <a href="${LEARN_URL}" rel="noopener noreferrer" target="_blank">claudecertificationguide.com/learn</a>.
     </footer>
   </div>
 </body>
 </html>`
 }
+
 
 function loadQuestions() {
   const all = []
@@ -329,8 +370,6 @@ function renderQuestionPage(q, siblings) {
     ? `<a href="${relUrl(`domains/${q.domainMeta.slug}/`)}">${escapeHtml(q.domain)}</a>`
     : escapeHtml(q.domain)
 
-  const prev = siblings[q.index - 1]
-  const next = siblings[q.index + 1]
   const related = siblings
     .filter((s) => s.id !== q.id && s.domain === q.domain)
     .slice(0, 5)
@@ -339,10 +378,6 @@ function renderQuestionPage(q, siblings) {
     q.question.length > 110 ? `${q.question.slice(0, 107)}…` : q.question
   const title = `CCARF ${q.paperLabel} Q${q.id}: ${shortQ}`
   const description = `Free CCARF / Claude Certified Architect Foundations practice question (${q.domain}). Review options and explanations, then try it in the interactive exam app.`
-
-  const practiceHref = relUrl(
-    `?paper=${encodeURIComponent(q.paperId)}&mode=flashcard&q=${q.index + 1}`,
-  )
 
   const body = `
     <p class="eyebrow">CCARF Practice Question</p>
@@ -357,18 +392,13 @@ function renderQuestionPage(q, siblings) {
       <p><strong>Correct answer:</strong> ${escapeHtml(formatCorrect(q.correct_answer))}</p>
       <div class="feedback">${feedbackHtml}</div>
     </details>
-    <a class="cta" href="${practiceHref}">Practice this in the interactive app</a>
-    <div class="nav-row">
-      <span>${prev ? `<a href="${relUrl(prev.path.slice(1))}">← Previous: Q${prev.id}</a>` : ''}</span>
-      <span>${next ? `<a href="${relUrl(next.path.slice(1))}">Next: Q${next.id} →</a>` : ''}</span>
-    </div>
     ${
       related.length
         ? `<h2>Related ${escapeHtml(q.domainMeta?.name ?? 'domain')} questions</h2>
            <div class="grid">${related
              .map(
                (r) =>
-                 `<div class="card"><a href="${relUrl(r.path.slice(1))}">${escapeHtml(r.paperLabel)} Q${r.id}</a><span class="sub">${escapeHtml(r.question.slice(0, 140))}${r.question.length > 140 ? '…' : ''}</span></div>`,
+                 `<a class="card card-link" href="${relUrl(r.path.slice(1))}"><span class="title">${escapeHtml(r.paperLabel)} Q${r.id}</span><span class="sub">${escapeHtml(r.question.slice(0, 140))}${r.question.length > 140 ? '…' : ''}</span></a>`,
              )
              .join('')}</div>`
         : ''
@@ -394,7 +424,7 @@ function renderDomainPage(domain, questions) {
   const list = questions
     .map(
       (q) =>
-        `<div class="card"><a href="${relUrl(q.path.slice(1))}">${escapeHtml(q.paperLabel)} · Q${q.id}</a><span class="sub">${escapeHtml(q.question.slice(0, 160))}${q.question.length > 160 ? '…' : ''}</span></div>`,
+        `<a class="card card-link" href="${relUrl(q.path.slice(1))}"><span class="title">${escapeHtml(q.paperLabel)} · Q${q.id}</span><span class="sub">${escapeHtml(q.question.slice(0, 160))}${q.question.length > 160 ? '…' : ''}</span></a>`,
     )
     .join('\n')
 
@@ -409,7 +439,7 @@ function renderDomainPage(domain, questions) {
     <p class="eyebrow">CCARF Domain ${escapeHtml(domain.id)}</p>
     <h1>${escapeHtml(domain.name)} Practice Questions</h1>
     <p class="lede">${escapeHtml(domain.intro)}</p>
-    <p class="meta">${questions.length} questions in this domain · Claude Certified Architect Foundations (CCA-F / CCAR-F)</p>
+    <p class="meta">${questions.length} practice questions · Official blueprint weight ${escapeHtml(domain.weight ?? '')} · Claude Certified Architect Foundations (CCAR-F)</p>
     <div class="grid">${list}</div>
     <h2>Other domains</h2>
     <p class="meta">${otherDomains}</p>
@@ -437,7 +467,7 @@ function renderPaperPage(paper, questions) {
   const list = questions
     .map(
       (q) =>
-        `<div class="card"><a href="${relUrl(q.path.slice(1))}">Q${q.id}</a><span class="sub">${escapeHtml(q.domain)} — ${escapeHtml(q.question.slice(0, 140))}${q.question.length > 140 ? '…' : ''}</span></div>`,
+        `<a class="card card-link" href="${relUrl(q.path.slice(1))}"><span class="title">Q${q.id}</span><span class="sub">${escapeHtml(q.domain)} — ${escapeHtml(q.question.slice(0, 140))}${q.question.length > 140 ? '…' : ''}</span></a>`,
     )
     .join('\n')
 
@@ -489,79 +519,176 @@ function renderGuidePage(guide) {
   })
 }
 
+function guideAttribution() {
+  return `<p class="meta" style="margin-top:2rem">
+    Study notes paraphrased for CCAR-F / CCARF prep from the public
+    <em>Claude Certified Architect – Foundations Exam Guide</em> (exam code CCAR-F, v1.0).
+    Unofficial practice aid — not affiliated with Anthropic. Always prefer the latest official guide when scheduling.
+  </p>`
+}
+
 function buildGuides() {
   return [
+    {
+      slug: 'ccarf-exam-overview',
+      title: 'CCAR-F Exam Overview — Claude Certified Architect Foundations',
+      description:
+        'CCAR-F / CCARF exam overview: 60 questions, 120 minutes, four scenarios, domain weights, scoring, and who the Anthropic Claude Certified Architect Foundations exam is for.',
+      body: `
+    <p class="eyebrow">CCAR-F / CCARF</p>
+    <h1>Claude Certified Architect – Foundations exam overview</h1>
+    <p class="lede">
+      The CCAR-F credential checks whether you can make production tradeoffs with Claude Code,
+      the Claude Agent SDK, the Claude API, and Model Context Protocol (MCP)—not just recite definitions.
+    </p>
+    <div class="prose">
+      <h2>Exam at a glance</h2>
+      <ul>
+        <li><strong>Exam code:</strong> CCAR-F (often searched as CCARF / CCA-F / CCAR-F)</li>
+        <li><strong>Items:</strong> 60 multiple-choice / multiple-response questions</li>
+        <li><strong>Structure:</strong> 4 live scenarios drawn from a bank of 6</li>
+        <li><strong>Time:</strong> 120 minutes, proctored</li>
+        <li><strong>Passing score:</strong> scaled 720 on a 100–1,000 scale</li>
+        <li><strong>Validity:</strong> 12 months (renewal path via Anthropic Partner Academy)</li>
+      </ul>
+      <h2>Who it is for</h2>
+      <p>
+        Solution architects with hands-on Claude experience—typically 6+ months building agentic apps,
+        Claude Code team workflows, MCP integrations, structured outputs, and reliability/escalation patterns.
+      </p>
+      <h2>Domain weights</h2>
+      <ul>
+        ${DOMAINS.map(
+          (d) =>
+            `<li><strong>${escapeHtml(d.id)} ${escapeHtml(d.name)}</strong> — ${escapeHtml(d.weight)}</li>`,
+        ).join('')}
+      </ul>
+      <h2>How this practice site helps</h2>
+      <ul>
+        <li>Drill by domain with the in-app filter.</li>
+        <li>Use full exam mode for timed-feeling practice papers.</li>
+        <li>Read per-option explanations to internalize preferred tradeoffs.</li>
+      </ul>
+    </div>
+    <a class="cta" href="${relUrl('guides/ccarf-exam-scenarios/')}">Review the six exam scenarios</a>
+    <a class="cta" href="${relUrl('')}">Open the practice app</a>
+    ${guideAttribution()}
+  `,
+    },
     {
       slug: 'ccarf-exam-domains',
       title:
         'CCARF Exam Domains Explained — Claude Certified Architect Foundations',
       description:
-        'A plain-English guide to the five CCARF / CCA-F exam domains: agentic architecture, MCP tools, Claude Code, prompt engineering, and context management.',
+        'CCAR-F domain blueprint with weights: Agentic Architecture (27%), MCP tools (18%), Claude Code (20%), Prompt Engineering (20%), Context & Reliability (15%).',
       body: `
     <p class="eyebrow">CCARF Study Guide</p>
-    <h1>Claude Certified Architect Foundations exam domains explained</h1>
+    <h1>CCAR-F exam domains explained</h1>
     <p class="lede">
-      The CCARF / CCA-F / CCAR-F exam tests whether you can design reliable Claude-powered systems.
-      These five domains map to how Anthropic expects architects to think about agents, tools, developer workflows, prompts, and context.
+      The official blueprint weights five domains. Use this as a study map, then drill matching practice questions.
     </p>
     <div class="prose">
-      <h2>D1 · Agentic Architecture &amp; Orchestration</h2>
-      <p>Design multi-step and multi-agent systems: when to use a single agent vs coordinator patterns, how to route work, hand off context, and keep orchestration simple enough to debug.</p>
-      <h2>D2 · Tool Design &amp; MCP Integration</h2>
-      <p>Give Claude the right tools through MCP and clear tool descriptions. Prefer narrow, purpose-specific tools over vague catch-all tools, and design for safe, predictable invocation.</p>
-      <h2>D3 · Claude Code Configuration &amp; Workflows</h2>
-      <p>Configure Claude Code with hooks, CLAUDE.md, skills, permissions, and compaction so developer workflows stay repeatable and reviewable.</p>
-      <h2>D4 · Prompt Engineering &amp; Structured Output</h2>
-      <p>Write prompts that steer Claude toward correct behavior: system instructions, examples, XML structure, schemas, and evaluation loops for structured outputs.</p>
-      <h2>D5 · Context Management &amp; Reliability</h2>
-      <p>Keep long-running agents grounded: manage context windows, retrieval, memory, retries, evaluations, and failure modes so answers stay accurate under load.</p>
-      <h2>How to practice</h2>
-      <ul>
-        <li>Drill one domain at a time in the interactive app with the domain filter.</li>
-        <li>Then take a full paper in exam mode to simulate the real test.</li>
-        <li>Read the per-option explanations — wrong answers often teach the exam’s preferred pattern.</li>
-      </ul>
+      <h2>D1 · Agentic Architecture &amp; Orchestration (${DOMAINS[0].weight})</h2>
+      <p>Agentic loops driven by <code>stop_reason</code> (<code>tool_use</code> vs <code>end_turn</code>), hub-and-spoke coordinators, Task-tool subagents with explicit context passing, parallel Task calls, programmatic prerequisites/hooks instead of “hope the prompt remembers,” and session resume/fork choices.</p>
+      <h2>D2 · Tool Design &amp; MCP Integration (${DOMAINS[1].weight})</h2>
+      <p>Tool descriptions that disambiguate similar tools, splitting vague tools into narrow ones, MCP <code>isError</code> patterns, project vs user MCP config (<code>.mcp.json</code> / <code>~/.claude.json</code>), resources as catalogs, and picking Grep/Glob/Read/Write/Edit/Bash correctly.</p>
+      <h2>D3 · Claude Code Configuration &amp; Workflows (${DOMAINS[2].weight})</h2>
+      <p>CLAUDE.md hierarchy (user/project/directory), <code>@import</code> and <code>.claude/rules</code> with path globs, project slash commands and skills (<code>context: fork</code>, <code>allowed-tools</code>), plan mode vs direct execution, Explore subagent for noisy discovery, and CI-oriented Claude Code usage.</p>
+      <h2>D4 · Prompt Engineering &amp; Structured Output (${DOMAINS[3].weight})</h2>
+      <p>Few-shot examples for ambiguous cases, <code>tool_use</code> + JSON schemas for reliable structure, <code>tool_choice</code> (<code>auto</code> / <code>any</code> / forced), validation-retry with error feedback, Message Batches for latency-tolerant work, and independent multi-pass review instead of weak self-review.</p>
+      <h2>D5 · Context Management &amp; Reliability (${DOMAINS[4].weight})</h2>
+      <p>Protect critical facts from progressive summarization, mitigate lost-in-the-middle, trim verbose tool results, escalate on clear criteria (not vibes), propagate structured errors across agents, and calibrate human review with confidence/stratified sampling ideas.</p>
+      <h2>Out of scope (do not over-study)</h2>
+      <p>Fine-tuning, billing/auth deep dives, hosting MCP infrastructure, model internals, computer use, vision, embeddings/vector DB plumbing, and cloud-provider setup details are called out as out of scope in the official guide.</p>
     </div>
     <div class="grid grid-2" style="margin-top:1.25rem">
       ${DOMAINS.map(
         (d) =>
-          `<div class="card"><a href="${relUrl(`domains/${d.slug}/`)}">${escapeHtml(d.id)} · ${escapeHtml(d.name)}</a><span class="sub">Browse practice questions</span></div>`,
+          `<div class="card"><a href="${relUrl(`domains/${d.slug}/`)}">${escapeHtml(d.id)} · ${escapeHtml(d.name)}</a><span class="sub">${escapeHtml(d.weight)} of exam · practice questions</span></div>`,
       ).join('')}
     </div>
     <a class="cta" href="${relUrl('')}">Open the practice app</a>
+    ${guideAttribution()}
+  `,
+    },
+    {
+      slug: 'ccarf-exam-scenarios',
+      title: 'CCAR-F Exam Scenarios — Six Production Storylines',
+      description:
+        'The six CCAR-F scenario banks: support agents, Claude Code workflows, multi-agent research, developer productivity, CI integration, and structured extraction—plus which domains each emphasizes.',
+      body: `
+    <p class="eyebrow">CCARF Scenarios</p>
+    <h1>Six CCAR-F exam scenarios to practice against</h1>
+    <p class="lede">
+      On exam day you see 4 of these 6 scenario contexts. Practicing across all six keeps you ready for any draw.
+    </p>
+    <div class="prose">
+      <h2>1 · Customer support resolution agent</h2>
+      <p>Agent SDK support bot with MCP tools (customer/order/refund/escalate). Focus: orchestration, tool design, escalation/reliability, first-contact resolution without unsafe autonomy.</p>
+      <h2>2 · Code generation with Claude Code</h2>
+      <p>Team coding with slash commands, CLAUDE.md, and plan mode vs direct execution. Focus: Claude Code configuration and context management.</p>
+      <h2>3 · Multi-agent research system</h2>
+      <p>Coordinator plus search/analysis/synthesis/report subagents. Focus: orchestration, MCP/tools, context handoffs and coverage gaps.</p>
+      <h2>4 · Developer productivity with Claude</h2>
+      <p>Codebase exploration agents using built-in tools plus MCP. Focus: tool selection, Claude Code workflows, agent architecture.</p>
+      <h2>5 · Claude Code for CI/CD</h2>
+      <p>Automated review/test feedback in pipelines with low false positives. Focus: Claude Code + prompt/structured-output design.</p>
+      <h2>6 · Structured data extraction</h2>
+      <p>Unstructured documents → schema-validated JSON with retries and edge cases. Focus: prompt engineering/structured output and reliability.</p>
+    </div>
+    <a class="cta" href="${relUrl('guides/ccarf-exam-domains/')}">Map scenarios to domains</a>
+    <a class="cta" href="${relUrl('')}">Practice in the app</a>
+    ${guideAttribution()}
   `,
     },
     {
       slug: 'claude-code-hooks',
-      title: 'Claude Code Hooks Cheat Sheet for CCARF',
+      title: 'Claude Code Study Notes for CCARF (CLAUDE.md, Skills, Hooks)',
       description:
-        'Quick CCARF study cheat sheet for Claude Code hooks: PreToolUse, PostToolUse, PreCompact, and common workflow patterns that show up in CCA-F practice questions.',
+        'CCAR-F Domain 3 study notes: CLAUDE.md hierarchy, .claude/rules, slash commands, skills with context:fork, plan mode, and hooks patterns that show up in practice questions.',
       body: `
-    <p class="eyebrow">CCARF Cheat Sheet</p>
-    <h1>Claude Code hooks cheat sheet</h1>
+    <p class="eyebrow">Domain 3 Cheat Sheet</p>
+    <h1>Claude Code configuration notes for CCAR-F</h1>
     <p class="lede">
-      Hooks let you run custom logic around Claude Code lifecycle events. CCARF questions often ask which hook fits a workflow — archive before compact, gate a tool call, or react after a write.
+      Domain 3 is ~20% of the exam. Questions reward correct scoping (user vs project), isolation (<code>context: fork</code>),
+      and deterministic enforcement (hooks/gates) over vague prompt-only hopes.
     </p>
     <div class="prose">
-      <h2>Common hook events</h2>
+      <h2>CLAUDE.md hierarchy</h2>
       <ul>
-        <li><code>PreToolUse</code> — runs before a tool executes; useful for allow/deny gates and input checks.</li>
-        <li><code>PostToolUse</code> — runs after a tool finishes; useful for logging, formatting, or follow-up actions.</li>
-        <li><code>PreCompact</code> — runs before conversation compaction; the right place to archive the full transcript.</li>
-        <li>Session/stop style hooks — cleanup, summaries, or notifications when a turn or session ends.</li>
+        <li>User-level (<code>~/.claude/CLAUDE.md</code>) is personal—teammates will not get it via git.</li>
+        <li>Project-level (<code>CLAUDE.md</code> / <code>.claude/CLAUDE.md</code>) is the shared source of truth.</li>
+        <li>Use <code>@import</code> and <code>.claude/rules/</code> to keep standards modular; path globs load rules only when relevant files are touched.</li>
+        <li><code>/memory</code> helps verify what is actually loaded when behavior looks inconsistent.</li>
       </ul>
-      <h2>Patterns the exam likes</h2>
+      <h2>Commands &amp; skills</h2>
       <ul>
-        <li>Prefer the dedicated event over inventing a fake tool name (compaction is not a model tool).</li>
-        <li>Keep hooks narrow: snapshot on <code>PreCompact</code>, don’t log every write “just in case”.</li>
-        <li>Use permissions + hooks together for safer agentic coding workflows.</li>
-        <li>Document project conventions in <code>CLAUDE.md</code>; use hooks for enforcement and automation.</li>
+        <li>Project commands live in <code>.claude/commands/</code>; personal ones in <code>~/.claude/commands/</code>.</li>
+        <li>Skills (<code>.claude/skills/*/SKILL.md</code>) support frontmatter like <code>context: fork</code>, <code>allowed-tools</code>, and <code>argument-hint</code>.</li>
+        <li>Forked skill context keeps verbose exploration from polluting the main thread.</li>
       </ul>
-      <h2>Practice these questions</h2>
-      <p>Filter the interactive app to <strong>D3 Claude Code Configuration &amp; Workflows</strong>, or browse the domain page for static explanations.</p>
+      <h2>Plan mode vs direct execution</h2>
+      <ul>
+        <li>Plan mode for large/architectural/multi-approach work.</li>
+        <li>Direct execution for narrow, well-scoped fixes.</li>
+        <li>Explore subagents for noisy discovery so the main context stays clean.</li>
+      </ul>
+      <h2>Hooks patterns that matter</h2>
+      <ul>
+        <li><code>PreToolUse</code> / interception hooks: gate policy-sensitive calls before they run.</li>
+        <li><code>PostToolUse</code>: normalize tool results (dates, status codes) before the model reasons on them.</li>
+        <li><code>PreCompact</code>: archive transcripts before compaction discards detail.</li>
+        <li>Prefer dedicated lifecycle hooks over inventing fake tool names for non-tool operations.</li>
+      </ul>
+      <h2>MCP config reminders</h2>
+      <ul>
+        <li>Shared servers → project <code>.mcp.json</code> with <code>\${ENV}</code> expansion for secrets.</li>
+        <li>Personal experiments → user-level Claude config so they do not ship to the team.</li>
+      </ul>
     </div>
-    <a class="cta" href="${relUrl('domains/claude-code-configuration-workflows/')}">Browse D3 Claude Code questions</a>
+    <a class="cta" href="${relUrl('domains/claude-code-configuration-workflows/')}">Browse D3 practice questions</a>
     <a class="cta" href="${relUrl('')}">Open interactive app</a>
+    ${guideAttribution()}
   `,
     },
   ]
@@ -580,7 +707,7 @@ function renderHubPage(allQuestions) {
 
   const domainCards = DOMAINS.map((d) => {
     const count = allQuestions.filter((q) => q.domain === d.full).length
-    return `<div class="card"><a href="${relUrl(`domains/${d.slug}/`)}">${escapeHtml(d.id)} · ${escapeHtml(d.name)}</a><span class="sub">${count} questions</span></div>`
+    return `<div class="card"><a href="${relUrl(`domains/${d.slug}/`)}">${escapeHtml(d.id)} · ${escapeHtml(d.name)}</a><span class="sub">${escapeHtml(d.weight)} of exam · ${count} practice questions</span></div>`
   }).join('\n')
 
   const guideCards = buildGuides()
@@ -591,13 +718,14 @@ function renderHubPage(allQuestions) {
     .join('\n')
 
   const body = `
-    <p class="eyebrow">CCARF / CCA-F / CCAR-F</p>
+    <p class="eyebrow">CCAR-F / CCARF / CCA-F</p>
     <h1>Claude Certified Architect Foundations Practice Questions</h1>
     <p class="lede">
-      Free Anthropic certification practice bank with ${allQuestions.length} questions and per-option explanations.
-      Cover all five CCARF domains, then open the interactive app for flashcard or full exam mode.
+      Free practice bank aligned to the official CCAR-F blueprint (${allQuestions.length} questions with explanations).
+      Study the five weighted domains and six scenario storylines, then drill in flashcard or full exam mode.
     </p>
     <a class="cta" href="${relUrl('')}">Open interactive practice app</a>
+    <a class="cta" href="${LEARN_URL}" rel="noopener noreferrer" target="_blank">Learn curriculum</a>
     <h2>Study guides</h2>
     <div class="grid grid-2">${guideCards}</div>
     <h2>Practice papers</h2>
@@ -636,7 +764,7 @@ function writeSitemap(urls) {
     .join('\n')
 
   writeFileSync(
-    join(DIST, 'sitemap.xml'),
+    join(OUT, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${body}
@@ -648,7 +776,7 @@ ${body}
 
 function writeRobots() {
   writeFileSync(
-    join(DIST, 'robots.txt'),
+    join(OUT, 'robots.txt'),
     `User-agent: *
 Allow: /
 
@@ -659,10 +787,7 @@ Sitemap: ${SITE_URL}sitemap.xml
 }
 
 function main() {
-  if (!existsSync(DIST)) {
-    console.error('dist/ not found. Run vite build first.')
-    process.exit(1)
-  }
+  mkdirSync(OUT, { recursive: true })
 
   const allQuestions = loadQuestions()
   const byPaper = Object.fromEntries(
@@ -735,11 +860,24 @@ function main() {
   writeSitemap(urls)
   writeRobots()
 
-  // SPA fallback for unknown paths on GitHub Pages
-  copyFileSync(join(DIST, 'index.html'), join(DIST, '404.html'))
+  // SPA fallback for unknown paths on GitHub Pages (only when building into dist)
+  const spaIndex = join(OUT, 'index.html')
+  if (existsSync(spaIndex)) {
+    const spaHtml = readFileSync(spaIndex, 'utf8')
+    const notFound = spaHtml.includes('name="robots"')
+      ? spaHtml.replace(
+          /<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/,
+          '<meta name="robots" content="noindex, follow" />',
+        )
+      : spaHtml.replace(
+          '</head>',
+          '    <meta name="robots" content="noindex, follow" />\n  </head>',
+        )
+    writeFileSync(join(OUT, '404.html'), notFound)
+  }
 
   console.log(
-    `SEO pages generated: ${allQuestions.length} questions, ${DOMAINS.length} domains, ${PAPERS.length} papers, ${buildGuides().length} guides, hub, sitemap, robots, 404.`,
+    `SEO pages generated into ${OUT}: ${allQuestions.length} questions, ${DOMAINS.length} domains, ${PAPERS.length} papers, ${buildGuides().length} guides, hub, sitemap, robots.`,
   )
 }
 

@@ -1,0 +1,57 @@
+html {
+  scrollbar-gutter: stable;
+}
+
+.site-header {
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f1115;
+  padding: 0.875rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .site-header {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.site-header nav {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: 72rem;
+  margin: 0 auto;
+  column-gap: 1.5rem;
+  row-gap: 0.5rem;
+}
+
+.site-header nav a {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: #fb923c;
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+.site-header nav a:hover {
+  color: #fed7aa;
+  text-decoration: underline;
+}
+
+.site-header nav a[aria-current='page'] {
+  color: #1c1006;
+  background: #fb923c;
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+  margin-inline: -0.55rem;
+  text-decoration: none;
+}
+
+.site-header nav a[aria-current='page']:hover {
+  color: #1c1006;
+  text-decoration: none;
+}
