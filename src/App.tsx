@@ -142,7 +142,7 @@ function QuizSessionBody({
     return (
       <div className="flex min-h-svh flex-col">
         <SiteHeader />
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 pt-3 pb-6 lg:flex-row lg:items-start lg:gap-8 lg:px-6 lg:py-8">
           <Sidebar
             paperLabel={paper.label}
             mode={mode}
@@ -161,7 +161,7 @@ function QuizSessionBody({
             onNext={() => undefined}
             onReset={onReset}
           />
-          <main className="min-w-0 flex-1 text-[#a89f91]">
+          <main className="min-w-0 flex-1 px-3 text-[#a89f91] lg:px-0">
             No questions in this domain for {paper.label}. Choose another domain
             or all domains.
           </main>
@@ -182,7 +182,7 @@ function QuizSessionBody({
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 pt-3 pb-24 lg:flex-row lg:items-start lg:gap-8 lg:px-6 lg:py-8 lg:pb-8">
         <Sidebar
           paperLabel={paper.label}
           mode={mode}
@@ -213,7 +213,7 @@ function QuizSessionBody({
           }
         />
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 px-3 lg:px-0">
           {showingResults ? (
             <ExamResults
               paperLabel={paper.label}

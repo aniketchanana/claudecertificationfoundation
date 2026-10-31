@@ -41,6 +41,14 @@ export function renderSiteHeader(hrefFor, currentPath = '') {
     return `<a href="${href}"${attrs}>${item.label}</a>`
   }).join('\n      ')
   return `<header class="site-header">
+  <div class="site-header-bar">
+    <a class="site-header-brand" href="${hrefFor('')}">CCARF</a>
+    <label class="site-nav-button" for="site-nav-toggle">
+      <span class="sr-only">Menu</span>
+      <span class="site-nav-icon" aria-hidden="true"></span>
+    </label>
+  </div>
+  <input id="site-nav-toggle" class="site-nav-toggle" type="checkbox" />
   <nav aria-label="Site">
       ${links}
   </nav>

@@ -56,10 +56,10 @@ export function Flashcard({
           .join('\n\n')
 
   return (
-    <div className="perspective w-full">
+    <div className="perspective w-full max-lg:-mx-3 max-lg:w-auto lg:mx-0">
       <div className={`flashcard-inner ${showBack ? 'is-flipped' : ''}`}>
-        <div className="flashcard-face rounded-2xl border border-[#e8dfd0]/20 bg-[#f7f1e6] p-5 text-left shadow-xl shadow-black/30 sm:p-7">
-          <span className="inline-flex rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-orange-800 uppercase">
+        <div className="flashcard-face border border-[#e8dfd0]/20 bg-[#f7f1e6] p-4 text-left shadow-xl shadow-black/30 max-lg:rounded-none max-lg:border-x-0 max-lg:shadow-none sm:p-7 lg:rounded-2xl">
+          <span className="inline-block max-w-full truncate rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-orange-800 uppercase">
             {question.domain}
           </span>
           <p className="mt-3 text-[15px] leading-relaxed font-medium text-[#1c1915] sm:text-base">
@@ -108,7 +108,7 @@ export function Flashcard({
         </div>
 
         {revealFeedback && (
-          <div className="flashcard-face flashcard-back flex flex-col overflow-auto rounded-2xl border border-[#e8dfd0]/20 bg-[#f7f1e6] p-5 text-left shadow-xl shadow-black/30 sm:p-7">
+          <div className="flashcard-face flashcard-back flex flex-col overflow-auto border border-[#e8dfd0]/20 bg-[#f7f1e6] p-4 text-left shadow-xl shadow-black/30 max-lg:rounded-none max-lg:border-x-0 max-lg:shadow-none sm:p-7 lg:rounded-2xl">
             <div
               className={`rounded-xl px-3.5 py-2.5 text-sm font-semibold ${
                 isCorrect

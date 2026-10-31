@@ -54,6 +54,37 @@ body {
   transform: rotateY(180deg);
 }
 
+@media (max-width: 1023px) {
+  .perspective {
+    perspective: none;
+  }
+
+  .flashcard-inner,
+  .flashcard-inner.is-flipped {
+    transform: none;
+  }
+
+  .flashcard-face {
+    min-height: 0;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+
+  .flashcard-back {
+    position: static;
+    transform: none;
+    display: none;
+  }
+
+  .flashcard-inner.is-flipped > .flashcard-face:not(.flashcard-back) {
+    display: none;
+  }
+
+  .flashcard-inner.is-flipped > .flashcard-back {
+    display: flex;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flashcard-inner {
     transition: none;
